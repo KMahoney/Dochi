@@ -1,0 +1,9 @@
+
+def hello |i| i i *
+
+def goodbye |j| j j +
+
+def adding
+    1 + |addone|
+    2 + |addtwo|
+    addone addtwo +
