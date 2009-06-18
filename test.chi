@@ -1,9 +1,54 @@
 
-def hello |i| i i *
 
-def goodbye |j| j j +
 
-def adding
-    1 + |addone|
-    2 + |addtwo|
-    addone addtwo +
+# simple object orientation
+
+def <square> (size) T{:class :square} size :size <<
+def <circle> (dia) T{:class :circle} dia :dia <<
+
+def method-call (obj m) m obj :class >> >> obj swap call
+
+def area T{
+
+    :square [:size >> sq]
+    :circle [:dia >> 3 * sq]
+
+    } method-call
+
+
+
+
+def factorial (n) n 1 <= [1] [n 1 - factorial n *] if
+
+def run-test call ["."] ["X"] if write
+
+
+
+def main
+    L{
+
+    # simple tests
+
+    [1 1 + 2 =]
+    [1 2 <]
+    [2 1 >]
+    ["test" dup =]
+    [2 1 swap swap >]
+    [5 factorial 120 =]
+
+    # object/table tests
+
+    [5 <circle> area 225 =]
+    [5 <square> area 25 =]
+
+    # combinator test
+
+    [1 [5 +] [4 +] bi >]
+    [1 [[1 +] [2 +] bi] [3 +] bi + + 9 =]
+
+    # list test
+
+    [0 L{1 2 3} [+] each 6 =]
+
+    } [run-test] each
+

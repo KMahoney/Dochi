@@ -1,0 +1,25 @@
+
+def dup (a) a a
+def swap (a b) b a
+def bi (v q1 q2) v @q1 v @q2
+def tri (v q1 q2 q3) v @q1 v @q2 v @q3
+
+def square dup *
+
+def uncons [head] [tail] bi
+
+def each (l q)
+    l uncons (h t)
+    h q call
+    t [t q each] when
+
+def when [] if
+def unless [] swap if
+
+def -1 1 -
+def +1 1 +
+
+def do-times (q i)
+    q call
+    i -1 (i)
+    i 0 > [q i do-times] when

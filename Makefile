@@ -1,5 +1,7 @@
 
-dochi: Dochi/Main.hs Dochi/Parse.hs
+.PHONY: dochi
+
+dochi:
 	ghc --make -iDochi Main -o dochi
 
 clean:

@@ -1,0 +1,49 @@
+h1. Dochi
+
+h2. A Concatenative Programming Language
+
+Dochi is strongly influenced by Factor, Lua and Clojure. Its design goal is to be lightweight and embeddable, similar to Lua. Its base data structures will be immutable, like Clojure.
+
+h2. Syntax
+
+* Code is a list of words, like Forth/Factor
+* They operate on a stack
+* Lexical bindings can be introduced at any point:
+** Results in 4: @1 (a) a 2 + a +@
+** Results in 11: @2 3 4 (a b c) a a + b + c +@
+* Top level definitions use the 'def' keyword: @def square (a) a a *@
+* Keywords: @:hello@
+* Lists: @{1 2 3 4 "hello" "world"}@
+* Tables: @#{:a 1 :b 2 :c 3}@
+* Code quotations: @number? ["yes" write] ["no" write] if@
+
+h2. Standard Library
+
+h3. Interpreter-only
+
+* @object .@ Pretty print object.
+* @string write@ Print string.
+* @clear@ Clear stack.
+* @.s@ Print stack.
+* @.e@ Print current environment.
+* @.v@ Print current captured vars.
+
+h3. Tables
+
+* @<table>@ Create an empty table.
+* @table value key <<@ Add (key, value) pair to table.
+* @table key >>@ Lookup key in table.
+
+h3. Lists
+
+* @<list>@ Empty list (nil value).
+* @a b ;@ Cons a and b.
+* @list head@ Head of list.
+* @list tail@ Tail of list.
+
+h3. Misc
+
+* @+ - * / < > <= >=@ Binary operations on two numbers.
+* @=@ General equality.
+* @bool true-block false-block if@ Execute true-block if bool is true, else false-block.
+

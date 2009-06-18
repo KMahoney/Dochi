@@ -1,0 +1,15 @@
+
+* TODO operations: 
+* TODO map operations: assoc
+* TODO C Backend
+
+* Ideas
+
+  - {} creates list. Constant sections factored out as optimisation. e.g.
+    {1 2 3 a 4 5 6 b} => {1 2 3} a cons {4 5 6} append b cons
+    
+    also for maps. Ordering isn't important here.
+    #{:a 1 :b b :c 2} => #{:a 1 :c 2} :b b insert
+
+  - memory pool for cons cells/tree nodes etc.
+    Generic memory for strings etc. (copying collector?)

@@ -1,4 +1,4 @@
-module Parse (AST(..), Prog, dochiParse) where
+module Parse (AST(..), Interactive(..), Prog, dochiParse, dochiParseFile) where
 
 import Text.ParserCombinators.Parsec
 import qualified Data.Map as M
@@ -6,57 +6,140 @@ import qualified Data.Map as M
 
 data AST = Word String
          | CodeBlock [AST]
-         | LArray [AST]
+         | CallBlock AST
          | LString String
          | LInteger Integer
+         | LKeyword String
+         | LList [AST]
+         | LTable [AST]
          | Capture [String]
            deriving (Show)
 
-type Prog = M.Map String AST
+data Interactive = ILine [AST]
+                 | IDef String [AST]
+                 deriving (Show)
+
+type Prog = [(String, [AST])]
 
 type ChiParser a = GenParser Char () a
 
 
 
-idletter = (alphaNum <|> oneOf "_-+?!/\\*<>=.") <?> ""
+idletter = (alphaNum <|> oneOf "_-+?!/\\*<>=.&;'%^£$~`¬|") <?> ""
 identifier = (many1 idletter) <?> "identifier"
 
+skipSpaces :: ChiParser ()
+skipSpaces = skipMany (comment <|> skipMany1 space)
+    where comment = do char '#'
+                       manyTill anyChar newline
+                       return ()
+
 litInt :: ChiParser AST
-litInt = i1 <?> "integer"
-    where i1 = do i <- many1 digit
-                  notFollowedBy idletter
-                  return $ LInteger $ read i
+litInt = x <?> "integer"
+    where x = do i <- many1 digit
+                 notFollowedBy idletter
+                 return $ LInteger $ read i
+
 
 litStr :: ChiParser AST
-litStr = (s1 <?> "string")
-    where s1 = (char '"') >> (manyTill anyChar $ char '"') >>= (return . LString)
+litStr = x <?> "string"
+    where x = (char '"') >> (manyTill anyChar $ char '"') >>= (return . LString)
+
 
 lexCap :: ChiParser AST
-lexCap = do char '|'
-            spaces
-            v <- sepEndBy identifier spaces
-            char '|'
-            return $ Capture v
+lexCap = x <?> "capture"
+    where x = do char '('
+                 skipSpaces
+                 v <- sepEndBy identifier skipSpaces
+                 char ')'
+                 return $ Capture v
+
 
 word :: ChiParser AST
-word = (identifier <?> "word") >>= (return . Word)
+word = x <?> "word"
+    where x = identifier >>= (return . Word)
+
+
+keyword :: ChiParser AST
+keyword = x <?> "keyword"
+    where x = char ':' >> (identifier <?> "word") >>= (return . LKeyword)
+
 
 codeQuot :: ChiParser AST
-codeQuot = do char '['
-              spaces
-              v <- manyTill value $ char ']'
-              return $ CodeBlock v
+codeQuot = x <?> "quote"
+    where x = do char '['
+                 skipSpaces
+                 v <- manyTill value $ char ']'
+                 return $ CodeBlock v
 
-litArr :: ChiParser AST
-litArr = do char '{'
-            spaces
-            v <- manyTill value $ char '}'
-            return $ LArray v
+
+litList :: ChiParser AST
+litList = x <?> "list"
+    where x = do char 'L'
+                 char '{'
+                 skipSpaces
+                 v <- manyTill value $ char '}'
+                 return $ LList v
+
+
+litTable :: ChiParser AST
+litTable = x <?> "map"
+    where x = do char 'T'
+                 char '{'
+                 skipSpaces
+                 v <- manyTill value $ char '}'
+                 return $ LTable v
+
+
+callBlock :: ChiParser AST
+callBlock = x <?> "call operator"
+    where x = do char '@'
+                 skipSpaces
+                 v <- value
+                 return $ CallBlock v
+
 
 value :: ChiParser AST
-value = do v <- (try litInt <|> (litStr <|> word <|> codeQuot <|> litArr <|> lexCap))
-           spaces
+value = do v <- choice [ try litInt 
+                       , try litList
+                       , try litTable
+                       , litStr 
+                       , callBlock
+                       , keyword
+                       , word
+                       , codeQuot
+                       , lexCap ] <?> "value"
+           skipSpaces
            return v
 
-dochiParse :: String -> String -> Either ParseError AST
-dochiParse name content = runParser (spaces >> value) () name content
+defWord :: ChiParser ()
+defWord = do skipSpaces
+             string "def"
+             skipMany1 space
+
+interactive :: ChiParser Interactive
+interactive = iDef <|> iLine
+    where iDef = do try defWord
+                    name <- identifier
+                    skipSpaces
+                    v <- manyTill value eof
+                    return $ IDef name v
+          iLine = do skipSpaces 
+                     v <- manyTill value eof
+                     return $ ILine v
+
+file :: ChiParser Prog
+file = defWord >> rec
+
+    where rec = (eof >> return []) <|> 
+                do name <- identifier
+                   skipSpaces
+                   v <- manyTill value (eof <|> (try defWord))
+                   r <- rec
+                   return $ (name, v) : r
+
+dochiParse :: String -> String -> Either ParseError Interactive
+dochiParse name content = runParser interactive () name content
+
+dochiParseFile :: String -> String -> Either ParseError Prog
+dochiParseFile name content = runParser file () name content
