@@ -1,15 +1,32 @@
+* General
+** TODO Module system
 
-* TODO operations: 
-* TODO map operations: assoc
-* TODO C Backend
+   imports + exports. Resolve words at compile time.
+
+** TODO C ffi
+
+* C Backend
+** TODO Dynamic, garbage-collected C values (separate project)
+** TODO C implementation of persistent data-structures
+
+   - List
+   - Vector
+   - Map (hash?)
+
+
+* TODO x86 Backend
+
+* Library
+** TODO Curses binding
 
 * Ideas
 
-  - {} creates list. Constant sections factored out as optimisation. e.g.
-    {1 2 3 a 4 5 6 b} => {1 2 3} a cons {4 5 6} append b cons
-    
-    also for maps. Ordering isn't important here.
-    #{:a 1 :b b :c 2} => #{:a 1 :c 2} :b b insert
-
   - memory pool for cons cells/tree nodes etc.
-    Generic memory for strings etc. (copying collector?)
+  - Generic memory for strings etc. (copying collector?)
+  - tail call optimisation with computed gotos (gcc ext)
+  - maybe separate into C99/GCC options
+
+  - ARM backend
+  - Java bytecode (clojure data-structures)
+    
+  - pattern matching + destructuring bind
