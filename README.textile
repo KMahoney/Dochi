@@ -50,6 +50,10 @@ h3. Misc
 h2. Internals
 
 * Core.hs - Standard library implementation.
-* IC.hs - Translation from AST to IC. Resolution of words.
-* Interpreter.hs - Haskell interpretation of IC. Uses @ChiState@ for state.
-* Parse.hs - Parsing to AST, list of modules. Returns @Interactive@ type, or @Prog@, which is a list of @ChiModule@.
+* IMC.hs - Immediate code data structures.
+* Compile.hs - Translation from AST to immediate code. Resolution of words.
+* Interpreter.hs - Haskell interpretation of immediate code. Uses @ChiState@ for state.
+* Parse.hs - Parsing to AST, list of modules. Returns @Interactive@ type, or @Prog@, which is a list of @ChiModuleAST@.
+
+* core.chi - More standard library written in Dochi.
+* test.chi - Basic tests.
