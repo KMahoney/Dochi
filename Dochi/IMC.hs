@@ -18,8 +18,7 @@ data Value = VWord String
            | VString String
            | VQuot [IC]
            | VClosure [Value] [IC]
-           | VTrue
-           | VNil
+           | VBool Bool
            | VCons Value Value
            | VTable (M.Map Value Value)
            | ForeignValue ForeignType

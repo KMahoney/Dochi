@@ -53,7 +53,8 @@ compileClosure ast =
 literalValue :: AST -> Compiler Value
 literalValue v =
     case v of
-      Word "nil"      -> return VNil
+      Word "f"        -> return $ VBool False
+      Word "t"        -> return $ VBool True
       Word name       -> return $ VWord name
       LInteger value  -> return $ VInteger value
       LString value   -> return $ VString value
@@ -72,7 +73,7 @@ literalValue v =
 
 
 literalList :: [AST] -> Compiler Value
-literalList ast = mapM literalValue ast >>= (return . foldr VCons VNil)
+literalList ast = mapM literalValue ast >>= (return . foldr VCons (VBool False))
 
 literalTable :: [AST] -> Compiler Value
 literalTable ast = do t <- mapM literalValue ast
@@ -106,10 +107,9 @@ compileAST ast =
 
     where 
           callword "drop" = tell [PopValue]
-          callword "nil"  = tell [PushValue VNil]
+          callword "f"    = tell [PushValue $ VBool False]
+          callword "t"    = tell [PushValue $ VBool True]
           callword "call" = tell [FnCall]
-          callword "true" = tell [PushValue VTrue]
-          callword "false" = tell [PushValue VNil]
           callword name = do CompileState st m <- get
                              case (elemIndex name st) of
                                Just i -> tell [VarIndex (toInteger i)]

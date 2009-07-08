@@ -36,7 +36,6 @@ h3. Tables
 
 h3. Lists
 
-* @<list>@ Empty list (nil value).
 * @a b ;@ Cons a and b.
 * @list head@ Head of list.
 * @list tail@ Tail of list.

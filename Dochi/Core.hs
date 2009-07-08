@@ -14,14 +14,14 @@ prettyprint v =
       VInteger a -> show a
       VWord a -> "/" ++ a
       VKeyword a -> ":" ++ a
-      VTrue -> "true"
+      VBool False -> "f"
+      VBool True -> "t"
       VQuot _ -> "[QUOT]"
       VClosure vals _ -> "[closure over " ++ (intercalate " " $ map prettyprint vals) ++ "]"
-      VNil -> "nil"
       VCons h t -> "L{" ++ pplist h t
       VTable t -> "T{" ++ (intercalate " " $ map pptable $ M.toList t) ++ "}"
 
-    where pplist h VNil = prettyprint h ++ "}"
+    where pplist h (VBool False) = prettyprint h ++ "}"
           pplist h (VCons h2 t2) = prettyprint h ++ " " ++ pplist h2 t2
           pplist h t = prettyprint h ++ " . " ++ prettyprint t ++ "}"
           pptable (k,v) = (prettyprint k) ++ " " ++ (prettyprint v)
@@ -50,18 +50,18 @@ bin_math fn = do
 bin_bool_math fn = do
   a <- checkedInteger
   b <- checkedInteger
-  pushstack $ if (fn b a) then VTrue else VNil
+  pushstack $ VBool (fn b a)
 
 equality = do
   a <- popstack
   b <- popstack
-  pushstack $ if (b == a) then VTrue else VNil
+  pushstack $ VBool (b == a)
 
 ifstmt = do       
   f <- popstack
   t <- popstack
   c <- popstack
-  pushstack $ if (c /= VNil) then t else f
+  pushstack $ if (c /= (VBool False)) then t else f
   fncall
 
 clearstack = modify $ \st -> st { stack = [] }
@@ -78,8 +78,6 @@ checkedCons = do
   case v of
     VCons h t -> return (h, t)
     _ -> chiError "Expecting list"
-
-makelist = pushstack VNil
 
 vhead = do
   (h, _) <- checkedCons
@@ -127,7 +125,7 @@ inserttable = do
 gettable = do
   k <- popstack
   t <- checkedTable
-  pushstack $ fromMaybe VNil $ M.lookup k t
+  pushstack $ fromMaybe (VBool False) $ M.lookup k t
 
 
 
@@ -146,7 +144,6 @@ corelib = M.fromList
 
           , ("if", ifstmt)
 
-          , ("<list>", makelist)
           , (";",    vcons)
           , ("head", vhead)
           , ("tail", vtail)

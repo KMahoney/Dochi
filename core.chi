@@ -11,9 +11,9 @@ def square dup *
 def uncons [head] [tail] bi
 
 def each (l q)
-    l uncons (h t)
-    h q call
-    t [t q each] when
+    l uncons (hd tl)
+    hd q call
+    tl [tl q each] when
 
 def when [] if
 def unless [] swap if
@@ -27,4 +27,4 @@ def do-times (q i)
     i 0 > [q i do-times] when
 
 def to-list (stack-count)
-    nil [swap ;] stack-count do-times
+    f [swap ;] stack-count do-times
