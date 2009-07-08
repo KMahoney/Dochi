@@ -25,3 +25,6 @@ def do-times (q i)
     q call
     i -1 (i)
     i 0 > [q i do-times] when
+
+def to-list (stack-count)
+    nil [swap ;] stack-count do-times
