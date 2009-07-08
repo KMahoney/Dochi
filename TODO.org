@@ -1,7 +1,42 @@
 * General
 ** TODO Module system
+*** DONE Basic infastructure
+*** TODO Multiple def detection
+*** TODO respect imports and exports
 
-   imports + exports. Resolve words at compile time.
+** TODO Objects
+
+   CLOS-like. Syntax:
+   
+   method name (a:class b:class) body
+
+   inherit :classA :classB
+
+   Use :class lookup for tables.
+
+   Class of data structures :number :table :list etc.
+   Class of keyword evaluates to self.
+
+   example:
+
+   inherit :key3 :key1
+
+   1. method a (:key1) ...
+   2. method a (:key2) ...
+   3. method a (l:list) ...
+
+   [:key1 a] -> 1
+   [:key2 a] -> 2
+   [:key3 a] -> 1
+   [L{1 2 3} a] -> 3
+   [:unknown a] -> error
+
+** TODO destructuring bind in capture
+
+   e.g. L{1 2 3} (C{a b})
+   
+   a -> 1
+   b -> L{2 3}
 
 ** TODO Objects
 

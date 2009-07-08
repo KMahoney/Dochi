@@ -47,3 +47,9 @@ h3. Misc
 * @=@ General equality.
 * @bool true-block false-block if@ Execute true-block if bool is true, else false-block.
 
+h2. Internals
+
+* Core.hs - Standard library implementation.
+* IC.hs - Translation from AST to IC. Resolution of words.
+* Interpreter.hs - Haskell interpretation of IC. Uses @ChiState@ for state.
+* Parse.hs - Parsing to AST, list of modules. Returns @Interactive@ type, or @Prog@, which is a list of @ChiModule@.

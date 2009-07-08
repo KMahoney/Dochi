@@ -1,4 +1,6 @@
 
+module core
+
 def dup (a) a a
 def swap (a b) b a
 def bi (v q1 q2) v @q1 v @q2

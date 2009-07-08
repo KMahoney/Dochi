@@ -1,6 +1,6 @@
 module Core (coreState) where
 
-import IC(IC(..), Value(..))
+import IMC
 import Interpreter
 
 import Data.List (intercalate, intersperse)
@@ -164,4 +164,4 @@ corelib = M.fromList
           , ("=", equality)
           ]
 
-coreState = ChiState [] [] corelib
+coreState = ChiState [] [] $ M.fromList [("core", corelib)]

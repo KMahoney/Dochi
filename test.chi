@@ -1,4 +1,9 @@
 
+module test
+
+#import blah de blah ;
+#export rah de rah ;
+#private de re de ;
 
 
 # simple object orientation
@@ -10,12 +15,10 @@ def method-call (obj m) m obj :class >> >> obj swap call
 
 def area T{
 
-    :square [:size >> sq]
-    :circle [:dia >> 3 * sq]
+    :square [:size >> square]
+    :circle [:dia >> 3 * square]
 
     } method-call
-
-
 
 
 def factorial (n) n 1 <= [1] [n 1 - factorial n *] if
@@ -23,6 +26,7 @@ def factorial (n) n 1 <= [1] [n 1 - factorial n *] if
 def run-test call ["."] ["X"] if write
 
 
+module main
 
 def main
     L{
