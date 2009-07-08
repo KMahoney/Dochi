@@ -7,6 +7,7 @@ import Data.List (intercalate, intersperse)
 import Data.Maybe (fromMaybe)
 import qualified Data.Map as M
 import Control.Monad.State
+import Random
 
 prettyprint v = 
     case v of
@@ -129,6 +130,15 @@ gettable = do
 
 
 
+-- misc
+
+rand_gen = do
+  b <- checkedInteger
+  a <- checkedInteger
+  n <- liftIO $ getStdRandom (randomR (a,b))
+  pushstack $ VInteger n
+
+
 corelib = M.fromList
           [ (".", doprettyprint)
           , ("write", writestr)
@@ -159,6 +169,8 @@ corelib = M.fromList
           , (">=", bin_bool_math (>=))
 
           , ("=", equality)
+
+          , ("rand-range", rand_gen)
           ]
 
 coreState = ChiState [] [] $ M.fromList [("core", corelib)]
