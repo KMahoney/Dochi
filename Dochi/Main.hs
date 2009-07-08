@@ -9,7 +9,7 @@ import System.Console.Editline.Readline
 import Prelude hiding (catch)
 import Control.Exception (try, catch, IOException)
 import Control.Monad (when, liftM)
-import Data.List (concat)
+import Data.List (concat, intersperse)
 import qualified Data.Map as M
 
 
@@ -17,7 +17,7 @@ import qualified Data.Map as M
 import Parse (AST(..), Interactive(..), dochiParseLine, dochiParseFile, Prog, modName, modDefs, allExports)
 import Compile (envCompile)
 import Interpreter (ChiState(..), defWord, runDochi, exports, runWord)
-import Core (coreState)
+import Core (coreState, prettyprint)
 
 
 -- options
@@ -80,13 +80,14 @@ runLine opts st ast = do
 
     Right ic -> do debugIC opts ic
                    st' <- runDochi st ic
+                   when (not . null $ stack st') $ putStrLn $ "\ESC[31m<<\ESC[0m " ++ (concat $ intersperse " " $ reverse $ map prettyprint (stack st'))
                    putStrLn []
                    return st'
 
 
 interactive :: Options -> ChiState -> IO ()
 interactive opts st = do
-  line <- readline ">> "
+  line <- readline "\ESC[32m>>\ESC[0m "
   case line of
     Nothing -> putStrLn "Finished" >> return ()
     Just "" -> interactive opts st

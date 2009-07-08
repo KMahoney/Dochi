@@ -1,4 +1,4 @@
-module Core (coreState) where
+module Core where
 
 import IMC
 import Interpreter
