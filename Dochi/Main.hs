@@ -11,6 +11,7 @@ import Control.Exception (try, catch, IOException)
 import Control.Monad (when, liftM)
 import Data.List (concat, intersperse)
 import qualified Data.Map as M
+import Data.Maybe (mapMaybe)
 
 
 
@@ -55,8 +56,10 @@ main = do
   args <- getArgs
   (opts, files) <- getopts args
 
+
+
   if repl opts
-    then compileFiles files >>= interactive opts
+    then setBasicWordBreakCharacters " " >> compileFiles files >>= interactive opts
     else case (length files) of
            0 -> error $ usageInfo header options
            _ -> compileFiles files >>= runWord "main" "main" >> return ()
@@ -84,9 +87,13 @@ runLine opts st ast = do
                    putStrLn []
                    return st'
 
+completion :: ChiState -> String -> IO [String]
+completion st str = return $ mapMaybe f $ M.keys (exports st)
+    where f k = if (take (length str) k) == str then (Just k) else Nothing
 
 interactive :: Options -> ChiState -> IO ()
 interactive opts st = do
+  setCompletionEntryFunction (Just $ completion st)
   line <- readline "\ESC[32m>>\ESC[0m "
   case line of
     Nothing -> putStrLn "Finished" >> return ()
