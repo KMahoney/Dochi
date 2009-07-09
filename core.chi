@@ -28,3 +28,6 @@ def do-times (q i)
 
 def to-list (stack-count)
     f [swap ;] stack-count do-times
+
+def choose
+    dup length -1 0 swap rand-range nth

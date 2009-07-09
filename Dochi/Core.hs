@@ -88,6 +88,19 @@ vtail = do
   (_, t) <- checkedCons
   pushstack $ t
 
+vlength = let calc n (VCons _ b) = calc (n + 1) b
+              calc n _ = n
+          in do l <- popstack
+                pushstack $ VInteger $ calc 0 l
+
+vnth = let calc 0 (VCons x _) = return x
+           calc n (VCons _ b) = calc (n - 1) b
+           calc _ _ = chiError "Expecting list"
+       in do i <- checkedInteger
+             l <- popstack
+             v <- calc i l
+             pushstack v
+
 
 -- interpreter state
 
@@ -154,9 +167,11 @@ corelib = M.fromList
 
           , ("if", ifstmt)
 
-          , (";",    vcons)
-          , ("head", vhead)
-          , ("tail", vtail)
+          , (";",      vcons)
+          , ("head",   vhead)
+          , ("tail",   vtail)
+          , ("length", vlength)
+          , ("nth",    vnth)
 
           , ("+", bin_math (+))
           , ("-", bin_math (-))
