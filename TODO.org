@@ -85,9 +85,6 @@
 
 * TODO x86 Backend
 
-* Library
-** TODO Curses binding
-
 * Ideas
 
   - memory pool for cons cells/tree nodes etc.

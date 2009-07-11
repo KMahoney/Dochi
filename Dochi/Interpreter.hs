@@ -4,9 +4,12 @@ import Data.Maybe (fromMaybe)
 import Data.List (tails)
 import qualified Data.Map as M
 import Control.Monad.State
+import Control.Monad.Error
+import Data.Foldable (foldrM)
 
 import IMC
-
+import Parse (AST, ChiModuleAST, modName, modDefs, allExports)
+import Compile (envCompile)
 
 -- mapping of words to code
 type ChiModule = M.Map String (Chi ())
@@ -23,10 +26,38 @@ data ChiState = ChiState
 type Chi a = StateT ChiState IO a
 
 
+emptyState = ChiState [] [] M.empty
+
 
 -- list of exports from modules
+
 exports :: ChiState -> M.Map String String
 exports st = M.foldWithKey (\name v m -> M.foldWithKey (\k _ m -> M.insert k name m) m v) M.empty (env st)
+
+
+-- inject [ChiModuleAST] into ChiState
+-- TODO
+-- (allExports prog) placeholder for current module imports
+-- e is currently union of all words in prog, and all words in state
+
+injectAST :: [ChiModuleAST] -> ChiState -> Either String ChiState
+injectAST prog st =
+
+  let e = M.union (exports st) (allExports prog)
+
+      modCompile :: ChiModuleAST -> ChiState -> Either String ChiState
+      modCompile m st = foldrM (defCompile m) st (modDefs m)
+
+      defCompile :: ChiModuleAST -> (String, [AST]) -> ChiState -> Either String ChiState
+      defCompile m (name,ast) st = case (envCompile e ast) of
+                                           Left err -> throwError $ "Compile Error: " ++ err
+                                           Right ic -> return $ defWord (modName m) name ic st
+
+  in foldrM modCompile st prog
+
+
+injectLib :: String -> ChiModule -> ChiState -> ChiState
+injectLib name m st = st { env = M.union (env st) (M.fromList [(name, m)]) }
 
 
 

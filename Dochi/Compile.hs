@@ -132,4 +132,7 @@ compileScoped st ast = runCompiler st $ do mapM_ compileAST ast
                                            let c = length st'
                                            when (c > 0) $ tell [EndScope $ toInteger c]
 
+
+-- Compile with environment
+
 envCompile e = compileScoped (CompileState [] e)

@@ -156,9 +156,11 @@ corelib = M.fromList
           [ (".", doprettyprint)
           , ("write", writestr)
           , ("clear", clearstack)
+
           , (".s", printstack)
           , (".e", printenv)
           , (".v", printvars)
+
 
           , ("<table>", maketable)
           , ("<<", inserttable)
@@ -188,4 +190,4 @@ corelib = M.fromList
           , ("rand-range", rand_gen)
           ]
 
-coreState = ChiState [] [] $ M.fromList [("core", corelib)]
+coreState = injectLib "core" corelib

@@ -28,8 +28,6 @@ data ChiModuleAST = ChiModuleAST { modName :: String
                                  , exports :: [String]
                                  }
 
-type Prog = [ChiModuleAST]
-
 type ChiParser a = GenParser Char () a
 
 
@@ -125,7 +123,7 @@ value = do v <- choice [ try litInt
            skipMany spaces
            return v
 
-defWord :: Prog -> ChiParser Prog
+defWord :: [ChiModuleAST] -> ChiParser [ChiModuleAST]
 defWord (m:p) = do name <- identifier
                    skipMany1 spaces
                    values name []
@@ -137,7 +135,7 @@ defWord (m:p) = do name <- identifier
 defWord [] = unexpected "def outside of module"
 
 
-defModule :: Prog -> ChiParser Prog
+defModule :: [ChiModuleAST] -> ChiParser [ChiModuleAST]
 defModule p = do name <- identifier
                  skipMany1 spaces
                  toplevel (emptyModule {modName = name} : p)
@@ -168,21 +166,21 @@ dochiParseLine name content = runParser interactive () name content
 
 -- files
 
-toplevel :: Prog -> ChiParser Prog
+toplevel :: [ChiModuleAST] -> ChiParser [ChiModuleAST]
 toplevel p = skipMany spaces >>
              choice [ try (string "module" >> skipMany1 spaces) >> defModule p
                     , try (string "def" >> skipMany1 spaces) >> defWord p
                     , eof >> return p
                     ]
 
-file :: ChiParser Prog
+file :: ChiParser [ChiModuleAST]
 file = toplevel []
 
-dochiParseFile :: String -> String -> Either ParseError Prog
+dochiParseFile :: String -> String -> Either ParseError [ChiModuleAST]
 dochiParseFile name content = runParser file () name content
 
 
 -- exports
 
-allExports :: Prog -> M.Map String String
+allExports :: [ChiModuleAST] -> M.Map String String
 allExports = M.fromList . concatMap (\m -> map (\d -> (fst d, modName m)) (modDefs m))

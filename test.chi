@@ -33,12 +33,23 @@ def main
 
     # simple tests
 
+    [t]
+    [f not]
+    [t t and]
+    [t f and not]
+    [f t and not]
+    [t t or]
+    [t f or]
+    [f t or]
+    [f f or not]
+
     [1 1 + 2 =]
     [1 2 <]
     [2 1 >]
     ["test" dup =]
     [2 1 swap swap >]
     [5 factorial 120 =]
+
 
     # object/table tests
 
@@ -53,6 +64,8 @@ def main
     # list test
 
     [0 L{1 2 3} [+] each 6 =]
+    [f 3 ; 2 ; 1 ; L{1 2 3} =]
+    [1 2 3 3 to-list L{1 2 3} =]
 
     } [run-test] each
 

@@ -15,10 +15,11 @@ import Data.Maybe (mapMaybe)
 
 
 
-import Parse (AST(..), Interactive(..), dochiParseLine, dochiParseFile, Prog, modName, modDefs, allExports)
+import Parse (AST(..), Interactive(..), ChiModuleAST, dochiParseLine, dochiParseFile)
 import Compile (envCompile)
-import Interpreter (ChiState(..), defWord, runDochi, exports, runWord)
+import Interpreter (ChiState(..), injectAST, defWord, runDochi, exports, runWord, emptyState)
 import Core (coreState, prettyprint)
+import Util (compileFiles, runFiles, initialState)
 
 
 -- options
@@ -56,13 +57,11 @@ main = do
   args <- getArgs
   (opts, files) <- getopts args
 
-
-
   if repl opts
-    then setBasicWordBreakCharacters " " >> compileFiles files >>= interactive opts
+    then setBasicWordBreakCharacters " " >> compileFiles initialState files >>= interactive opts
     else case (length files) of
            0 -> error $ usageInfo header options
-           _ -> compileFiles files >>= runWord "main" "main" >> return ()
+           _ -> runFiles files
 
 
 -- interactive
@@ -125,24 +124,3 @@ interactive opts st = do
                         addHistory l
                         putStrLn $ "Error " ++ (show err)
                         interactive opts st
-
--- run file
-
-parseFile :: String -> IO Prog
-parseFile name = do
-  content <- readFile name
-  case (dochiParseFile name content) of
-    Left err -> hPrint stderr err >> error "Parse Error"
-    Right p -> return p
-
-
-compileFiles :: [String] -> IO ChiState
-compileFiles files = do
-  prog <- liftM concat $ mapM parseFile files
-  let e = M.union (exports coreState) (allExports prog)
-  return $ foldr (modCompile e) coreState prog
-
-    where modCompile e m st = foldr (defCompile e m) st (modDefs m)
-          defCompile e m (name,ast) st = case (envCompile e ast) of
-                                           Left err -> error $ "Compile Error: " ++ err
-                                           Right ic -> defWord (modName m) name ic st
