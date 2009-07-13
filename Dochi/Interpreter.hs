@@ -1,4 +1,4 @@
-module Interpreter where
+module Dochi.Interpreter where
 
 import Data.Maybe (fromMaybe)
 import Data.List (tails)
@@ -7,9 +7,9 @@ import Control.Monad.State
 import Control.Monad.Error
 import Data.Foldable (foldrM)
 
-import IMC
-import Parse (AST, ChiModuleAST, modName, modDefs, allExports)
-import Compile (envCompile)
+import Dochi.IMC
+import Dochi.Parse (AST, ChiModuleAST, modName, modDefs, allExports)
+import Dochi.Compile (envCompile)
 
 -- mapping of words to code
 type ChiModule = M.Map String (Chi ())

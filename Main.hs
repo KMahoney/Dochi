@@ -15,11 +15,11 @@ import Data.Maybe (mapMaybe)
 
 
 
-import Parse (AST(..), Interactive(..), ChiModuleAST, dochiParseLine, dochiParseFile)
-import Compile (envCompile)
-import Interpreter (ChiState(..), injectAST, defWord, runDochi, exports, runWord, emptyState)
-import Core (coreState, prettyprint)
-import Util (compileFiles, runFiles, initialState)
+import Dochi.Parse (AST(..), Interactive(..), ChiModuleAST, dochiParseLine, dochiParseFile)
+import Dochi.Compile (envCompile)
+import Dochi.Interpreter (ChiState(..), injectAST, defWord, runDochi, exports, runWord, emptyState)
+import Dochi.Core (coreState, prettyprint)
+import Dochi.Util (compileFiles, runFiles, initialState)
 
 
 -- options

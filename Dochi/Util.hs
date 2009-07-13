@@ -1,11 +1,11 @@
-module Util where
+module Dochi.Util where
 
 import System.IO
 import Control.Monad (liftM)
 
-import Parse (ChiModuleAST, dochiParseFile)
-import Interpreter (ChiState, injectAST, runWord, emptyState)
-import Core (coreState)
+import Dochi.Parse (ChiModuleAST, dochiParseFile)
+import Dochi.Interpreter (ChiState, injectAST, runWord, emptyState)
+import Dochi.Core (coreState)
 
 
 initialState = coreState emptyState

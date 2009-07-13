@@ -1,4 +1,4 @@
-module IMC where
+module Dochi.IMC where
 
 import qualified Data.Map as M
 import Data.Dynamic

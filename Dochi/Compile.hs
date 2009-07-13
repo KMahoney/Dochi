@@ -1,4 +1,4 @@
-module Compile where
+module Dochi.Compile where
 
 import Data.List (elemIndex, (\\))
 import Data.Maybe (catMaybes)
@@ -9,8 +9,8 @@ import Control.Monad.Writer
 import Control.Monad.State
 import Control.Monad.Error
 
-import IMC
-import Parse (AST(..))
+import Dochi.IMC
+import Dochi.Parse (AST(..))
 
 data CompileState = CompileState { varState :: [String]
                                  , mLookup :: M.Map String String

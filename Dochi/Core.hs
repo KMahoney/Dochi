@@ -1,7 +1,7 @@
-module Core where
+module Dochi.Core where
 
-import IMC
-import Interpreter
+import Dochi.IMC
+import Dochi.Interpreter
 
 import Data.List (intercalate, intersperse)
 import Data.Maybe (fromMaybe)

@@ -1,4 +1,4 @@
-module Parse where
+module Dochi.Parse where
 
 import Data.List (intersperse)
 import Text.ParserCombinators.Parsec hiding (spaces)
