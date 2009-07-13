@@ -1,16 +1,14 @@
 module IMC where
 
 import qualified Data.Map as M
+import Data.Dynamic
 
--- To manipulate Haskell data structures with the interpreter, replace
--- ForeignType with a type of your choosing. There is probably a better,
--- more general way to do this e.g. with existential quantification, but I
--- don't understand the type system well enough.
 
--- A parametrised Value type would work, but the parameter cascades down
--- through IC etc. making it a lot of work.
+-- Quick hack
+instance Eq Dynamic where _ == _ = False
+instance Ord Dynamic where _ < _ = False
 
-type ForeignType = ()
+
 
 data Value = VWord String
            | VKeyword String
@@ -21,8 +19,11 @@ data Value = VWord String
            | VBool Bool
            | VCons Value Value
            | VTable (M.Map Value Value)
-           | ForeignValue ForeignType
+           | VDyn Dynamic
              deriving (Show, Eq, Ord)
+
+
+
 
 -- Intermediate Code
 
