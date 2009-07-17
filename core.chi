@@ -23,11 +23,18 @@ def to-list (stack-count)
     f [swap ;] stack-count do-times
 
 def choose
-    dup length -1 0 swap rand-range nth
+    dup length -- 0 swap rand-range nth
 
-def remove t
-def remove-if t
-def filter t
+
+def remove-if (test)
+    dup [uncons (hd tl) tl test remove-if hd @test [hd ;] unless]
+        [drop f]
+        if
+
+def remove (item) [item =] remove-if
+def filter (test) [@test not] remove-if
+
+
 def map t
 def set-difference t
 
@@ -39,11 +46,11 @@ def not [f] [t] if
 def and [drop f] unless
 def or [drop t] when
 
-def -1 1 -
-def +1 1 +
+def -- 1 -
+def ++ 1 +
 
 def do-times (q i)
     q call
-    i -1 (i)
+    i -- (i)
     i 0 > [q i do-times] when
 

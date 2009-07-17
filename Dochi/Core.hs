@@ -37,6 +37,10 @@ checkedString = do
 
 writestr = checkedString >>= (liftIO . putStr)
 
+toString = do
+  v <- popstack
+  pushstack $ VString $ prettyprint v
+
 checkedInteger = do
   v <- popstack
   case v of
@@ -67,12 +71,13 @@ ifstmt = do
 
 clearstack = modify $ \st -> st { stack = [] }
   
-vcons = do
+
+-- lists
+
+listCons = do
   h <- popstack
   t <- popstack
   pushstack $ VCons h t
-
--- lists
 
 checkedCons = do
   v <- popstack
@@ -80,26 +85,26 @@ checkedCons = do
     VCons h t -> return (h, t)
     _ -> chiError "Expecting list"
 
-vhead = do
+listHead = do
   (h, _) <- checkedCons
   pushstack $ h
 
-vtail = do
+listTail = do
   (_, t) <- checkedCons
   pushstack $ t
 
-vlength = let calc n (VCons _ b) = calc (n + 1) b
-              calc n _ = n
-          in do l <- popstack
-                pushstack $ VInteger $ calc 0 l
+listLength = let calc n (VCons _ b) = calc (n + 1) b
+                 calc n _ = n
+             in do l <- popstack
+                   pushstack $ VInteger $ calc 0 l
 
-vnth = let calc 0 (VCons x _) = return x
-           calc n (VCons _ b) = calc (n - 1) b
-           calc _ _ = chiError "Expecting list"
-       in do i <- checkedInteger
-             l <- popstack
-             v <- calc i l
-             pushstack v
+listNth = let calc 0 (VCons x _) = return x
+              calc n (VCons _ b) = calc (n - 1) b
+              calc _ _ = chiError "Expecting list"
+          in do i <- checkedInteger
+                l <- popstack
+                v <- calc i l
+                pushstack v
 
 
 -- interpreter state
@@ -128,8 +133,6 @@ checkedTable = do
     VTable t -> return t
     _ -> chiError "Expecting table"
 
-maketable = pushstack $ VTable $ M.empty
-
 inserttable = do
   k <- popstack
   v <- popstack
@@ -155,25 +158,23 @@ rand_gen = do
 corelib = M.fromList
           [ (".", doprettyprint)
           , ("write", writestr)
+          , ("->string", toString)
           , ("clear", clearstack)
 
           , (".s", printstack)
           , (".e", printenv)
           , (".v", printvars)
 
-
-          , ("<table>", maketable)
           , ("<<", inserttable)
           , (">>", gettable)
 
-
           , ("if", ifstmt)
 
-          , (";",      vcons)
-          , ("head",   vhead)
-          , ("tail",   vtail)
-          , ("length", vlength)
-          , ("nth",    vnth)
+          , (";",      listCons)
+          , ("head",   listHead)
+          , ("tail",   listTail)
+          , ("length", listLength)
+          , ("nth",    listNth)
 
           , ("+", bin_math (+))
           , ("-", bin_math (-))
