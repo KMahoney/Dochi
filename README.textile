@@ -61,7 +61,7 @@ h3. Embedding in Haskell Code
 
 * @Parse.dochiParseFile@ Turns a string of code into a @[ChiModuleAST]@.
 * @Interpreter.emptyState@ an empty interpreter state.
-* @Interpreter.injectAST@ compiles and injects a list of @ChiModuleAST@s into the interpreter state.
+* @Interpreter.injectAST@ compiles and injects a list of @ChiModuleAST@ into the interpreter state.
 * @Interpreter.injectLib@ injects a Haskell @ChiModule@ into the interpreter state.
 * @Interpreter.runWord@ runs a word in the given interpreter state.
 * @Interpreter.runDochi@ runs a string of code in the given interpreter state.
