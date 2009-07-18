@@ -50,7 +50,6 @@ def main
     [2 1 swap swap >]
     [5 factorial 120 =]
 
-
     # object/table tests
 
     [5 <circle> area 225 =]
@@ -70,6 +69,14 @@ def main
     [L{1 2 3} 2 remove L{1 3} =]
     [L{1 2 3 4} [2 <=] remove-if L{3 4} =]
     [L{1 2 3 4} [2 <=] filter L{1 2} =]
+
+    [1 (a) {a a a} L{1 1 1} =]
+
+    # literal test
+
+    [C{1 2} uncons -- =]
+    [T{:a 1 :b 2} [:a >>] [:b >>] bi -- =]
+    [T{:a 1 :b 2} 3 :c << T{:a 1 :b 2 :c 3} =]
 
     } [run-test] each
 
