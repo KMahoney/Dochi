@@ -65,7 +65,7 @@ literalValue v =
       LTable value    -> literalTable value
 
       CodeBlock ast   -> do st <- get
-                            case compile st ast of
+                            case compileScoped st ast of
                               Left err -> throwError err
                               Right quot -> return $ VQuot quot
 
