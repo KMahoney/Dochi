@@ -11,6 +11,7 @@ data AST = Word String
          | LString String
          | LInteger Integer
          | LKeyword String
+         | BuildList [AST]
          | LList [AST]
          | LCons [AST]
          | LTable [AST]
@@ -80,6 +81,11 @@ codeQuot = do char '['
               v <- manyTill value $ char ']'
               return $ CodeBlock v
 
+buildList :: ChiParser AST
+buildList = do char '{'
+               skipMany spaces
+               v <- manyTill value $ char '}'
+               return $ BuildList v
 
 litList :: ChiParser AST
 litList = do char 'L'
@@ -114,6 +120,7 @@ value = do v <- choice [ try litInt
                        , try litList
                        , try litCons
                        , try litTable
+                       , buildList
                        , litStr 
                        , callBlock
                        , keyword

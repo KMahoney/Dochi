@@ -29,6 +29,7 @@ freevars (h:t) =
     case h of
       Word s      -> S.insert s (freevars t)
       CodeBlock a -> S.union (freevars a) (freevars t)
+      BuildList a -> S.union (freevars a) (freevars t)
       CallBlock a -> S.union (freevars [a]) (freevars t)
       Capture a   -> (freevars t) S.\\ (S.fromList a)
       _           -> freevars t
@@ -56,6 +57,7 @@ literalValue v =
       Word "f"        -> return $ VBool False
       Word "t"        -> return $ VBool True
       Word name       -> return $ VWord name
+
       LInteger value  -> return $ VInteger value
       LString value   -> return $ VString value
       LKeyword value  -> return $ VKeyword value
@@ -68,12 +70,18 @@ literalValue v =
                               Right quot -> return $ VQuot quot
 
       -- errors
+      BuildList _     -> throwError "List not literal"
       Capture ids     -> throwError "Capture in literal list"
       CallBlock value -> throwError "@ Call in literal list"
 
 
 literalList :: [AST] -> Compiler Value
 literalList ast = mapM literalValue ast >>= (return . foldr VCons (VBool False))
+
+literalCons :: [AST] -> Compiler Value
+literalCons ast = if length ast < 2
+                    then throwError "Literal cons must contain at least 2 values"
+                    else mapM literalValue ast >>= (return . foldr1 VCons)
 
 literalTable :: [AST] -> Compiler Value
 literalTable ast = do t <- mapM literalValue ast
@@ -85,6 +93,12 @@ literalTable ast = do t <- mapM literalValue ast
           makeMap (_:[]) = throwError "Odd number of values for literal table"
           makeMap (k:v:tail) = makeMap tail >>= (return . M.insert k v)
 
+
+
+buildList :: [AST] -> Compiler ()
+buildList ast = tell [PushValue $ VBool False] >> mapM_ f (reverse ast)
+    where f ast = do compileAST ast
+                     tell [CallWord "core" ";"]
 
 
 compileAST :: AST -> Compiler ()
@@ -100,7 +114,12 @@ compileAST ast =
       CodeBlock ast   -> compileClosure ast
       CallBlock value -> do compileAST value
                             tell [FnCall]
+
+      BuildList ast   -> buildList ast
+
       LList value     -> do l <- literalList value
+                            tell [PushValue l]
+      LCons value     -> do l <- literalCons value
                             tell [PushValue l]
       LTable value    -> do t <- literalTable value
                             tell [PushValue t]
