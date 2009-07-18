@@ -3,17 +3,28 @@ module Main where
 
 import System.Environment
 import System.Console.GetOpt
+import qualified Data.Map as M
 
+import Dochi.Interpreter (env)
 import Dochi.Util (compileFiles, runFiles, initialState)
-import Dochi.REPL (runREPL)
+import qualified Dochi.REPL as R
 
 
-data Options = Options { repl :: Bool }
+data Options = Options { repl :: Bool
+                       , showAST :: Bool
+                       , showIC :: Bool
+                       }
 
-defaultOptions = Options { repl = False }
+defaultOptions = Options { repl = False
+                         , showAST = False
+                         , showIC = False
+                         }
 
 options :: [OptDescr (Options -> Options)]
-options = [ Option ['i'] ["interactive"] (NoArg (\o -> o {repl=True})) "Interactive REPL" ]
+options = [ Option ['i'] ["interactive"] (NoArg (\o -> o {repl=True})) "Interactive REPL"
+          , Option [] ["ast"] (NoArg (\o -> o {showAST=True})) "Display Parse Output"
+          , Option [] ["debug"] (NoArg (\o -> o {showIC=True})) "Display Intermediate Code"
+          ]
 
 getopts :: [String] -> IO (Options, [String])
 getopts args = 
@@ -23,15 +34,21 @@ getopts args =
 
 header = "Usage: dochi [OPTION...] input"
 
+withFiles files fn =
+    case (length files) of
+      0 -> error $ usageInfo header options
+      _ -> fn files
+
 
 main = do
 
   args <- getArgs
   (opts, files) <- getopts args
 
-  if repl opts
-    then compileFiles initialState files >>= runREPL 
-    else case (length files) of
-           0 -> error $ usageInfo header options
-           _ -> runFiles files
+  case opts of
+
+    Options {repl = True} -> do st <- compileFiles initialState files
+                                R.runREPL R.Options { R.showIC = showIC opts, R.showAST = showAST opts } st
+
+    _                     -> withFiles files runFiles
 

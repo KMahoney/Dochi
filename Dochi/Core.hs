@@ -83,7 +83,7 @@ checkedCons = do
   v <- popstack
   case v of
     VCons h t -> return (h, t)
-    _ -> chiError "Expecting list"
+    _ -> chiError $ "Expecting list, got " ++ (prettyprint v)
 
 listHead = do
   (h, _) <- checkedCons

@@ -62,10 +62,7 @@ injectLib name m st = st { env = M.union (env st) (M.fromList [(name, m)]) }
 
 
 chiError str = do st <- get
-                  err $ str ++ 
-                          "\nstack: " ++ (show $ stack st) ++
-                          "\nvars: " ++ (show $ vars st)
-
+                  err str
     where err = liftIO . ioError . userError
 
 
