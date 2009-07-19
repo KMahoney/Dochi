@@ -1,29 +1,10 @@
 
 module test
 
-#import blah de blah ;
-#export rah de rah ;
-#private de re de ;
-
-
-# simple object orientation
-
-def <square> (size) T{:class :square} size :size <<
-def <circle> (dia) T{:class :circle} dia :dia <<
-
-def method-call (obj m) m obj :class >> >> obj swap call
-
-def area T{
-
-    :square [:size >> square]
-    :circle [:dia >> 3 * square]
-
-    } method-call
-
-
 def factorial (n) n 1 <= [1] [n 1 - factorial n *] if
 
 def run-test call ["."] ["X"] if write
+
 
 
 module main
@@ -43,17 +24,28 @@ def main
     [f t or]
     [f f or not]
 
+    [t [t] lazy-and]
+    [t [f] lazy-and not]
+    [f [t] lazy-and not]
+    [f [f] lazy-and not]
+    [t [t] lazy-or]
+    [t [f] lazy-or]
+    [f [t] lazy-or]
+    [f [f] lazy-or not]
+
+    [1 [2] lazy-or 1 =]
+    [f [2] lazy-or 2 =]
+
+    [f L{ [f] [f] [f] [4] [5] [6] } [lazy-or] each 4 =]
+    [t L{ [1] [2] [3] [4] [5] [6] } [lazy-and] each 6 =]
+    [t L{ [1] [2] [f] [4] [5] [6] } [lazy-and] each not]
+
     [1 1 + 2 =]
     [1 2 <]
     [2 1 >]
     ["test" dup =]
     [2 1 swap swap >]
     [5 factorial 120 =]
-
-    # object/table tests
-
-    [5 <circle> area 225 =]
-    [5 <square> area 25 =]
 
     # combinator test
 
@@ -64,19 +56,26 @@ def main
 
     [0 L{1 2 3} [+] each 6 =]
     [f 3 ; 2 ; 1 ; L{1 2 3} =]
-    [1 2 3 3 to-list L{1 2 3} =]
-
+    [1 2 3 3 ->list L{1 2 3} =]
     [L{1 2 3} 2 remove L{1 3} =]
     [L{1 2 3 4} [2 <=] remove-if L{3 4} =]
     [L{1 2 3 4} [2 <=] filter L{1 2} =]
-
     [1 (a) {a a a} L{1 1 1} =]
+    [L{1 2 3} reverse L{3 2 1} =]
+    [L{1 2 3} [inc] map L{2 3 4} =]
+    [L{1 2 3 4} L{3 4 5 6} set-difference L{1 2} =]
+    [L{1 2 3} L{3 4 5} append L{1 2 3 3 4 5} =]
 
     # literal test
 
-    [C{1 2} uncons -- =]
-    [T{:a 1 :b 2} [:a >>] [:b >>] bi -- =]
+    [C{1 2} uncons dec =]
+
+    # table test
+
+    [T{:a 1 :b 2} [:a >>] [:b >>] bi dec =]
     [T{:a 1 :b 2} 3 :c << T{:a 1 :b 2 :c 3} =]
+    [f T{:a 1 :b 2 :c 0} [swap ; ;] table-each reverse L{C{:a 1} C{:b 2} C{:c 0}} =]
+    [T{:a 1 :b 2} T{:b 3 :c 4} union T{:a 1 :b 3 :c 4} =]
 
     } [run-test] each
 

@@ -63,6 +63,7 @@ literalValue v =
       LChar value     -> return $ VChar value
       LKeyword value  -> return $ VKeyword value
       LList value     -> literalList value
+      LCons value     -> literalCons value
       LTable value    -> literalTable value
 
       CodeBlock ast   -> do st <- get

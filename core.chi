@@ -3,11 +3,11 @@ module core
 
 def dup (a) a a
 def swap (a b) b a
+
 def bi (v q1 q2) v @q1 v @q2
+def bi* (v1 v2 q1 q2) v1 @q1 v2 @q2
 def tri (v q1 q2 q3) v @q1 v @q2 v @q3
-
-def square dup *
-
+def tri* (v1 v2 v3 q1 q2 q3) v1 @q1 v2 @q2 v3 @q3
 
 
 # lists
@@ -19,25 +19,43 @@ def each (l q)
     hd q call
     tl [tl q each] when
 
-def to-list (stack-count)
+def 2each (l1 l2 q)
+    l1 uncons (hd1 tl1)
+    l2 uncons (hd2 tl2)
+    hd1 hd2 q call
+    tl1 tl2 and [tl1 tl2 q 2each] when
+
+def ->list (stack-count)
     f [swap ;] stack-count do-times
 
 def choose
-    dup length -- 0 swap rand-range nth
+    dup length dec 0 swap rand-range nth
 
 
-def remove-if (test)
-    dup [uncons (hd tl) tl test remove-if hd @test [hd ;] unless]
-        [drop f]
-        if
+def remove-if (test) dup
+    [uncons (hd tl) tl test remove-if hd @test [hd ;] unless]
+    [drop f]
+    if
 
 def remove (item) [item =] remove-if
 def filter (test) [@test not] remove-if
 
+def range (low high)
+    low high <= [low inc high range low ;] [f] if
 
-def map t
-def set-difference t
+def reverse (li) f li [;] each
 
+def map (fn) f swap [fn call ;] each reverse
+
+def set-difference [remove] each
+
+def append (l1 l2) l1 reverse l2 [;] each reverse
+
+# tables
+
+def table-each (tbl q) tbl keys tbl values q 2each
+
+# misc
 
 def when [] if
 def unless [] swap if
@@ -46,11 +64,14 @@ def not [f] [t] if
 def and [drop f] unless
 def or [drop t] when
 
-def -- 1 -
-def ++ 1 +
+def lazy-or (q) dup [drop q call] unless
+def lazy-and (q) dup [drop q call] when
+
+def dec 1 -
+def inc 1 +
 
 def do-times (q i)
     q call
-    i -- (i)
+    i dec (i)
     i 0 > [q i do-times] when
 

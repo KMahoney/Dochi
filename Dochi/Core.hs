@@ -9,9 +9,13 @@ import qualified Data.Map as M
 import Control.Monad.State
 import Random
 
+prettylist li h (VCons h2 t2) = prettylist (h:li) h2 t2
+prettylist li h (VBool False) = "L{" ++ (intercalate " " $ map prettyprint $ reverse $ h:li) ++ "}"
+prettylist li h t = "C{" ++ (intercalate " " $ map prettyprint $ reverse $ t:h:li) ++ "}"
+
 prettyprint v = 
     case v of
-      VString a -> a
+      VString a -> "\"" ++ a ++ "\""
       VChar a -> "Ch{" ++ [a] ++ "}"
       VInteger a -> show a
       VWord a -> "/" ++ a
@@ -20,13 +24,10 @@ prettyprint v =
       VBool True -> "t"
       VQuot _ -> "[QUOT]"
       VClosure vals _ -> "[closure over " ++ (intercalate " " $ map prettyprint vals) ++ "]"
-      VCons h t -> "L{" ++ pplist h t
+      VCons h t -> prettylist [] h t
       VTable t -> "T{" ++ (intercalate " " $ map pptable $ M.toList t) ++ "}"
 
-    where pplist h (VBool False) = prettyprint h ++ "}"
-          pplist h (VCons h2 t2) = prettyprint h ++ " " ++ pplist h2 t2
-          pplist h t = prettyprint h ++ " . " ++ prettyprint t ++ "}"
-          pptable (k,v) = (prettyprint k) ++ " " ++ (prettyprint v)
+    where pptable (k,v) = (prettyprint k) ++ " " ++ (prettyprint v)
 
 doprettyprint = popstack >>= (liftIO . putStrLn . prettyprint)
 
@@ -46,7 +47,9 @@ writestr = checkedString >>= (liftIO . putStr)
 
 toString = do
   v <- popstack
-  pushstack $ VString $ prettyprint v
+  pushstack $ VString $ case v of
+                          VString a -> a
+                          a -> prettyprint a
 
 checkedInteger = do
   v <- popstack
@@ -151,6 +154,19 @@ gettable = do
   t <- checkedTable
   pushstack $ fromMaybe (VBool False) $ M.lookup k t
 
+tableKeys = do
+  t <- checkedTable
+  pushstack $ foldr VCons (VBool False) $ M.keys t
+
+tableValues = do
+  t <- checkedTable
+  pushstack $ foldr VCons (VBool False) $ M.elems t
+
+tableUnion = do
+  t1 <- checkedTable
+  t2 <- checkedTable
+  pushstack $ VTable $ M.union t1 t2
+
 
 
 -- misc
@@ -172,8 +188,11 @@ corelib = M.fromList
           , (".e", printenv)
           , (".v", printvars)
 
-          , ("<<", inserttable)
-          , (">>", gettable)
+          , ("<<",     inserttable)
+          , (">>",     gettable)
+          , ("keys",   tableKeys)
+          , ("values", tableValues)
+          , ("union",  tableUnion)
 
           , ("if", ifstmt)
 
