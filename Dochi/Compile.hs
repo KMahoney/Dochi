@@ -60,6 +60,7 @@ literalValue v =
 
       LInteger value  -> return $ VInteger value
       LString value   -> return $ VString value
+      LChar value     -> return $ VChar value
       LKeyword value  -> return $ VKeyword value
       LList value     -> literalList value
       LTable value    -> literalTable value
@@ -108,6 +109,7 @@ compileAST ast =
       Word name       -> callword name
       LInteger value  -> tell [PushValue $ VInteger value]
       LString value   -> tell [PushValue $ VString value]
+      LChar value     -> tell [PushValue $ VChar value]
       LKeyword value  -> tell [PushValue $ VKeyword value]
       Capture ids     -> do tell $ map VarPush (reverse ids)
                             modify $ \(CompileState st e) -> (CompileState (ids ++ st) e)

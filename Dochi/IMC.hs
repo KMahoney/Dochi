@@ -14,6 +14,7 @@ data Value = VWord String
            | VKeyword String
            | VInteger Integer
            | VString String
+           | VChar Char
            | VQuot [IC]
            | VClosure [Value] [IC]
            | VBool Bool

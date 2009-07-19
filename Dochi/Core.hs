@@ -12,6 +12,7 @@ import Random
 prettyprint v = 
     case v of
       VString a -> a
+      VChar a -> "Ch{" ++ [a] ++ "}"
       VInteger a -> show a
       VWord a -> "/" ++ a
       VKeyword a -> ":" ++ a
@@ -34,6 +35,12 @@ checkedString = do
   case v of
     VString s -> return s
     _ -> chiError "Expecting String"
+
+checkedChar = do
+  v <- popstack
+  case v of
+    VChar s -> return s
+    _ -> chiError "Expecting Character"
 
 writestr = checkedString >>= (liftIO . putStr)
 

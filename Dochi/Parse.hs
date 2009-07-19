@@ -9,6 +9,7 @@ data AST = Word String
          | CodeBlock [AST]
          | CallBlock AST
          | LString String
+         | LChar Char
          | LInteger Integer
          | LKeyword String
          | BuildList [AST]
@@ -57,6 +58,12 @@ litInt = do i <- many1 digit
 
 litStr :: ChiParser AST
 litStr = (char '"') >> (manyTill anyChar $ char '"') >>= (return . LString)
+
+litChar :: ChiParser AST
+litChar = do string "Ch{"
+             ch <- anyChar
+             char '}'
+             return $ LChar ch
 
 
 lexCap :: ChiParser AST
@@ -120,6 +127,7 @@ value = do v <- choice [ try litInt
                        , try litList
                        , try litCons
                        , try litTable
+                       , try litChar
                        , buildList
                        , litStr 
                        , callBlock
