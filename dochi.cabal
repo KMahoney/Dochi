@@ -1,0 +1,24 @@
+Name: dochi
+Version: 0.0.1
+Description: Concatenative Language
+License: GPL
+License-file: LICENSE
+Author: Kevin Mahoney
+Maintainer: kevin@kevinmahoney.co.uk
+Build-Type: Simple
+Cabal-Version: >=1.2
+
+library
+  Build-Depends: base, haskell98, mtl, containers, parsec, editline
+  GHC-Options: -fglasgow-exts
+  Exposed-Modules:
+        Dochi.Interpreter
+        Dochi.Util
+        Dochi.Core
+        Dochi.IMC
+        Dochi.Parse
+        Dochi.REPL
+        Dochi.Compile
+
+executable dochi
+  Main-is: Main.hs

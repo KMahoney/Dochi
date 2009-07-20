@@ -75,7 +75,7 @@ interactive opts st = do
                         debugAST opts ast
                         r <- try $ runLine opts st ast
                         case r of
-                          Left err -> do putStrLn $ show (err :: IOException)
+                          Left err -> do putStrLn $ show (err :: Exception)
                                          newline
                                          interactive opts st
                           Right st' -> interactive opts st'
