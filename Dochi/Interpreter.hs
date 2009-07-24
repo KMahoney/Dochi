@@ -19,6 +19,7 @@ type Env = M.Map String ChiModule
 data ChiState = ChiState
     { stack :: [Value]
     , vars :: [Value]
+    , wordTrace :: [String]
     , env :: Env
     }
 
@@ -26,7 +27,7 @@ data ChiState = ChiState
 type Chi a = StateT ChiState IO a
 
 
-emptyState = ChiState [] [] M.empty
+emptyState = ChiState [] [] [] M.empty
 
 
 -- list of exports from modules
@@ -38,7 +39,7 @@ exports st = M.foldWithKey (\name v m -> M.foldWithKey (\k _ m -> M.insert k nam
 -- inject [ChiModuleAST] into ChiState
 -- TODO
 -- (allExports prog) placeholder for current module imports
--- e is currently union of all words in prog, and all words in state
+-- e is currently union of allw ords in prog, and all words in state
 
 injectAST :: [ChiModuleAST] -> ChiState -> Either String ChiState
 injectAST prog st =
@@ -50,7 +51,7 @@ injectAST prog st =
 
       defCompile :: ChiModuleAST -> (String, [AST]) -> ChiState -> Either String ChiState
       defCompile m (name,ast) st = case (envCompile e ast) of
-                                           Left err -> throwError $ "Compile Error: " ++ err
+                                           Left err -> throwError $ "Compile Error in " ++ (modName m) ++ "."  ++ name ++  ": " ++ err
                                            Right ic -> return $ defWord (modName m) name ic st
 
   in foldrM modCompile st prog
@@ -62,7 +63,7 @@ injectLib name m st = st { env = M.union (env st) (M.fromList [(name, m)]) }
 
 
 chiError str = do st <- get
-                  err str
+                  err $ str ++ (show $ take 20 $ wordTrace st)
     where err = liftIO . ioError . userError
 
 
@@ -95,12 +96,18 @@ varindex n = do
   pushstack $ v !! (fromInteger n)
 
 
+pushTrace :: String -> Chi ()
+pushTrace name = modify $ \st -> st {wordTrace = (name:wordTrace st)}
+
+popTrace :: Chi ()
+popTrace = modify $ \st -> st {wordTrace = (tail $ wordTrace st)}
+
 callword :: String -> String -> Chi ()
 callword m w = do
   e <- gets env
   case M.lookup m e of
     Just m' -> case M.lookup w m' of
-                 Just f -> f
+                 Just f -> if m /= "core" then pushTrace w >> f >> popTrace else f
                  Nothing -> chiError $ "Unknown word: " ++ w ++ "."
     Nothing -> chiError $ "Unknown module: " ++ m ++ "."
 
