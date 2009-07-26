@@ -22,3 +22,4 @@ library
 
 executable dochi
   Main-is: Main.hs
+  GHC-Options: -fglasgow-exts

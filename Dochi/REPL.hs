@@ -2,10 +2,11 @@ module Dochi.REPL (runREPL, Options(..)) where
 
 import System.Console.Editline.Readline
 
-import Control.Exception
+
 import Control.Monad (when)
 import Data.List (concat, intersperse)
 import Data.Maybe (mapMaybe)
+import qualified System.IO.Error as IOE
 import qualified Data.Map as M
 
 import Dochi.Parse (AST, Interactive(..), dochiParseLine)
@@ -73,9 +74,11 @@ interactive opts st = do
                  Right (ILine ast) -> do
                         addHistory l
                         debugAST opts ast
-                        r <- try $ runLine opts st ast
+                        r <- IOE.try $ runLine opts st ast
                         case r of
-                          Left err -> do putStrLn $ show (err :: Exception)
+                          Left err -> do if (IOE.isUserError err)
+                                           then putStrLn $ IOE.ioeGetErrorString err
+                                           else putStrLn $ show err
                                          newline
                                          interactive opts st
                           Right st' -> interactive opts st'

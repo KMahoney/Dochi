@@ -37,7 +37,6 @@ exports st = M.foldWithKey (\name v m -> M.foldWithKey (\k _ m -> M.insert k nam
 
 
 -- inject [ChiModuleAST] into ChiState
--- TODO
 -- (allExports prog) placeholder for current module imports
 -- e is currently union of allw ords in prog, and all words in state
 
@@ -61,10 +60,9 @@ injectLib :: String -> ChiModule -> ChiState -> ChiState
 injectLib name m st = st { env = M.union (env st) (M.fromList [(name, m)]) }
 
 
-
-chiError str = do st <- get
-                  err $ str ++ (show $ take 20 $ wordTrace st)
-    where err = liftIO . ioError . userError
+-- dochi runtime error
+prettyTrace tr = "\n\n\ESC[31mSTACK TRACE\ESC[0m:\n" ++ (concatMap (++"\n") tr)
+chiError str = get >>= fail . (str++) . prettyTrace . wordTrace
 
 
 popstack :: Chi Value
