@@ -1,4 +1,22 @@
-module Dochi.Interpreter where
+module Dochi.Interpreter ( ChiState(..)
+                         , Chi
+                         , emptyState
+                         , exports
+                         , injectAST
+                         , injectLib
+
+                         , chiError
+                         , popstack
+                         , pushstack
+                         , callword
+                         , fncall
+
+                         , runCode
+                         , defWord
+                         , runWord
+                         , runDochi
+
+                         ) where
 
 import Data.Maybe (fromMaybe)
 import Data.List (tails)
@@ -11,11 +29,15 @@ import Dochi.IMC
 import Dochi.Parse (AST, ChiModuleAST, modName, modDefs, allExports)
 import Dochi.Compile (envCompile)
 
--- mapping of words to code
+
+-- |Mapping of words to code
+
 type ChiModule = M.Map String (Chi ())
+
 type Env = M.Map String ChiModule
 
--- global environment
+-- |Current state of interpreter
+
 data ChiState = ChiState
     { stack :: [Value]
     , vars :: [Value]
@@ -23,22 +45,22 @@ data ChiState = ChiState
     , env :: Env
     }
 
--- Chi Monad: interpreter code that manipulates the global state
+-- |Chi Monad: interpreter code that manipulates the interpreter state
+
 type Chi a = StateT ChiState IO a
 
 
+emptyState :: ChiState
 emptyState = ChiState [] [] [] M.empty
 
 
--- list of exports from modules
+-- |list of words mapped to their module name from the current state
 
 exports :: ChiState -> M.Map String String
 exports st = M.foldWithKey (\name v m -> M.foldWithKey (\k _ m -> M.insert k name m) m v) M.empty (env st)
 
 
--- inject [ChiModuleAST] into ChiState
--- (allExports prog) placeholder for current module imports
--- e is currently union of allw ords in prog, and all words in state
+-- |Compile and inject a syntax tree into the current state
 
 injectAST :: [ChiModuleAST] -> ChiState -> Either String ChiState
 injectAST prog st =
@@ -56,13 +78,18 @@ injectAST prog st =
   in foldrM modCompile st prog
 
 
+-- |Inject a haskell module into the current state
+
 injectLib :: String -> ChiModule -> ChiState -> ChiState
 injectLib name m st = st { env = M.union (env st) (M.fromList [(name, m)]) }
 
 
--- dochi runtime error
-prettyTrace tr = "\n\n\ESC[31mSTACK TRACE\ESC[0m:\n" ++ (concatMap (++"\n") tr)
+-- |Throw an error in the Chi monad
+
+chiError :: String -> Chi a
 chiError str = get >>= fail . (str++) . prettyTrace . wordTrace
+
+prettyTrace tr = "\n\n\ESC[31mSTACK TRACE\ESC[0m:\n" ++ (concatMap (++"\n") tr)
 
 
 popstack :: Chi Value
@@ -105,15 +132,18 @@ callword m w = do
   e <- gets env
   case M.lookup m e of
     Just m' -> case M.lookup w m' of
-                 Just f -> if m /= "core" then pushTrace w >> f >> popTrace else f
+                 Just f -> if not (m `elem` hidden) then pushTrace w >> f >> popTrace else f
                  Nothing -> chiError $ "Unknown word: " ++ w ++ "."
     Nothing -> chiError $ "Unknown module: " ++ m ++ "."
+
+  where hidden = ["core", "list", "table"]
 
 makeclosure :: [Int] -> [IC] -> Chi ()
 makeclosure refs code = do
   v <- gets vars
   pushstack $ VClosure (map (v !!) refs) code
 
+fncall :: Chi ()
 fncall = do
   a <- popstack
   case a of
@@ -142,18 +172,28 @@ runCode (instr:code) = do
   runCode code
 
 
--- Define a new word in ChiState
+-- |Define a new word in the current state
 
-defWord :: String -> String -> [IC] -> ChiState -> ChiState
+defWord :: String   -- ^ Module name
+        -> String   -- ^ Word name
+        -> [IC]     -- ^ Intermediate code of new word
+        -> ChiState -- ^ Initial state
+        -> ChiState -- ^ New state
+
 defWord m name code st = case M.lookup m (env st) of
                            Just m' -> st { env = M.insert m (M.insert name (runCode code) m') (env st) }
                            Nothing -> st { env = M.insert m (M.fromList [(name, (runCode code))]) (env st) }
 
 
 
--- run a word
 
-runWord :: String -> String -> ChiState -> IO ChiState
+-- |Run a word in the provided state
+
+runWord :: String      -- ^ Module name
+        -> String      -- ^ Word name
+        -> ChiState    -- ^ Initial interpreter state
+        -> IO ChiState -- ^ Returns new interpreter state
+
 runWord m name st = case M.lookup m (env st) of
                       Nothing -> error $ "Module not found: " ++ m
                       Just m' -> case M.lookup name m' of
@@ -162,7 +202,8 @@ runWord m name st = case M.lookup m (env st) of
                                                  return s
 
 
--- StateT wrapper for runcode
+
+-- |Run intermediate code in the provided state
 
 runDochi :: ChiState -> [IC] -> IO ChiState
 runDochi st code = do (a, s) <- runStateT (runCode code) st

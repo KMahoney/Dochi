@@ -1,4 +1,4 @@
-module Dochi.Compile where
+module Dochi.Compile (envCompile) where
 
 import Data.List (elemIndex, (\\))
 import Data.Maybe (catMaybes)
@@ -56,7 +56,6 @@ literalValue v =
     case v of
       Word "f"        -> return $ VBool False
       Word "t"        -> return $ VBool True
-      Word name       -> return $ VWord name
 
       LInteger value  -> return $ VInteger value
       LString value   -> return $ VString value
@@ -72,6 +71,8 @@ literalValue v =
                               Right quot -> return $ VQuot quot
 
       -- errors
+      Word _          -> throwError "Word not literal"
+      ModWord _ _     -> throwError "Word not literal"
       BuildList _     -> throwError "List not literal"
       Capture ids     -> throwError "Capture in literal list"
       CallBlock value -> throwError "@ Call in literal list"
@@ -100,7 +101,7 @@ literalTable ast = do t <- mapM literalValue ast
 buildList :: [AST] -> Compiler ()
 buildList ast = tell [PushValue $ VBool False] >> mapM_ f (reverse ast)
     where f ast = do compileAST ast
-                     tell [CallWord "core" ";"]
+                     tell [CallWord "list" ";"]
 
 
 compileAST :: AST -> Compiler ()
@@ -108,6 +109,7 @@ compileAST ast =
 
     case ast of
       Word name       -> callword name
+      ModWord m name  -> tell [CallWord m name]
       LInteger value  -> tell [PushValue $ VInteger value]
       LString value   -> tell [PushValue $ VString value]
       LChar value     -> tell [PushValue $ VChar value]
@@ -155,6 +157,11 @@ compileScoped st ast = runCompiler st $ do mapM_ compileAST ast
                                            when (c > 0) $ tell [EndScope $ toInteger c]
 
 
--- Compile with environment
+
+-- |Compile with provided environment
+
+envCompile :: M.Map String String -- ^ Map of words to corresponding module name
+           -> [AST]               -- ^ Syntax tree to compile
+           -> Either String [IC]  -- ^ Returns intermediate code
 
 envCompile e = compileScoped (CompileState [] e)

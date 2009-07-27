@@ -2,6 +2,7 @@ module Dochi.Util where
 
 import System.IO
 import Control.Monad (liftM)
+import qualified System.IO.Error as IOE
 
 import Dochi.Parse (ChiModuleAST, dochiParseFile)
 import Dochi.Interpreter (ChiState, injectAST, runWord, emptyState)
@@ -29,8 +30,12 @@ compileFiles st files = do
 runFilesWithState :: ChiState -> [String] -> IO ()
 runFilesWithState st files = do
   st' <- compileFiles st files
-  runWord "main" "main" st'
-  return ()
+  r <- IOE.try $ runWord "main" "main" st'
+  case r of
+    Left err -> putStrLn $ if IOE.isUserError err
+                             then IOE.ioeGetErrorString err
+                             else show err
+    Right _ -> return ()
 
 runFiles :: [String] -> IO ()
 runFiles = runFilesWithState initialState

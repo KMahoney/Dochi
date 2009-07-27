@@ -1,11 +1,20 @@
-module Dochi.Parse where
+module Dochi.Parse ( AST(..)
+                   , Interactive(..)
+                   , ChiModuleAST(..)
+                   , dochiParseLine
+                   , dochiParseFile
+                   , allExports
+                   ) where
 
 import Data.List (intersperse)
 import Text.ParserCombinators.Parsec hiding (spaces)
 import qualified Data.Map as M
 
 
+-- |Syntax tree of a word definition
+
 data AST = Word String
+         | ModWord String String
          | CodeBlock [AST]
          | CallBlock AST
          | LString String
@@ -19,16 +28,24 @@ data AST = Word String
          | Capture [String]
            deriving (Show)
 
+
+-- |Interactive parse result
+
 data Interactive = ILine [AST]
                  | IMod String
                  | IDef String [AST]
                  deriving (Show)
 
+
+-- |Parse-tree representation of a module
+
 data ChiModuleAST = ChiModuleAST { modName :: String
                                  , modDefs :: [(String, [AST])]
-                                 , imports :: [String]
-                                 , exports :: [String]
+                                 , modUses :: [String]
                                  }
+
+
+-- Parse monad
 
 type ChiParser a = GenParser Char () a
 
@@ -36,11 +53,11 @@ type ChiParser a = GenParser Char () a
 instance Show ChiModuleAST where
     show m = "module " ++ (modName m) ++ " [" ++ concat (intersperse "," (map fst $ modDefs m)) ++ "]"
 
-emptyModule = ChiModuleAST { modName = "", modDefs = [], imports = [], exports = [] }
+emptyModule = ChiModuleAST { modName = "", modDefs = [], modUses = [] }
 addDef name ast m = m { modDefs = ((name, ast) : modDefs m) }
 
 
-idletter = (alphaNum <|> oneOf "_-+?!/\\*<>=.&;'%^£$~`¬|") <?> ""
+idletter = (alphaNum <|> oneOf "_-+?!/\\*<>=&;'%^£$~`¬|") <?> ""
 identifier = (many1 idletter) <?> "identifier"
 
 
@@ -75,7 +92,8 @@ lexCap = do char '('
 
 
 word :: ChiParser AST
-word = identifier >>= (return . Word)
+word = do id <- identifier
+          (char '.' >> identifier >>= (return . ModWord id)) <|> (return $ Word id)
 
 
 keyword :: ChiParser AST
@@ -138,6 +156,10 @@ value = do v <- choice [ try litInt
            skipMany spaces
            return v
 
+
+
+-- Begin word definition
+
 defWord :: [ChiModuleAST] -> ChiParser [ChiModuleAST]
 defWord (m:p) = do name <- identifier
                    skipMany1 spaces
@@ -150,13 +172,30 @@ defWord (m:p) = do name <- identifier
 defWord [] = unexpected "def outside of module"
 
 
+
+-- Begin definition of a module
+
 defModule :: [ChiModuleAST] -> ChiParser [ChiModuleAST]
 defModule p = do name <- identifier
                  skipMany1 spaces
                  toplevel (emptyModule {modName = name} : p)
 
 
--- interactive
+
+-- Declare modules to use with a list of identifiers
+
+defUse :: [ChiModuleAST] -> [String] -> ChiParser [ChiModuleAST]
+defUse (m:p) l = choice [ toplevel $ (m {modUses = l ++ (modUses m)}) : p
+                        , do id <- identifier
+                             skipMany1 spaces
+                             defUse (m:p) (id:l)
+                        ]
+
+defUse [] _ = unexpected "use outside of module"
+
+
+
+-- Parse interactive line
 
 interactive :: ChiParser Interactive
 interactive = iDef <|> iMod <|> iLine
@@ -176,26 +215,36 @@ interactive = iDef <|> iMod <|> iLine
                      v <- manyTill value eof
                      return $ ILine v
 
+
+-- |Parse string as a standalone line
+
 dochiParseLine :: String -> String -> Either ParseError Interactive
 dochiParseLine name content = runParser interactive () name content
 
--- files
+
+
+-- Top level of a file is either a module definition, a use list, or a word definition
 
 toplevel :: [ChiModuleAST] -> ChiParser [ChiModuleAST]
 toplevel p = skipMany spaces >>
              choice [ try (string "module" >> skipMany1 spaces) >> defModule p
                     , try (string "def" >> skipMany1 spaces) >> defWord p
+                    , try (string "use" >> skipMany1 spaces) >> defUse p []
                     , eof >> return p
                     ]
 
 file :: ChiParser [ChiModuleAST]
 file = toplevel []
 
+
+-- |Parse string as a file
+
 dochiParseFile :: String -> String -> Either ParseError [ChiModuleAST]
 dochiParseFile name content = runParser file () name content
 
 
--- exports
+
+-- |Return all words in a list of modules mapped to their module name
 
 allExports :: [ChiModuleAST] -> M.Map String String
 allExports = M.fromList . concatMap (\m -> map (\d -> (fst d, modName m)) (modDefs m))

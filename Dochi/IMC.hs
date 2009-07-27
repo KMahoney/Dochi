@@ -25,9 +25,8 @@ data Value = VWord String
 
 
 
-
--- Intermediate Code
-
+-- |Intermediate Code
+-- 
 -- Captured values are pushed to a separate stack with VarPush
 -- and referenced with VarIndex. At the end of the scope they are
 -- pushed off the stack with EndScope. The rest are fairly

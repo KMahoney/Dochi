@@ -1,4 +1,11 @@
-module Dochi.Core where
+module Dochi.Core ( prettyprint
+                  , checkedString
+                  , checkedChar
+                  , checkedInteger
+                  , checkedCons
+                  , checkedTable
+                  , coreState
+                  ) where
 
 import Dochi.IMC
 import Dochi.Interpreter
@@ -9,16 +16,21 @@ import qualified Data.Map as M
 import Control.Monad.State
 import Random
 
+
+
+-- strings
+
 prettylist li h (VCons h2 t2) = prettylist (h:li) h2 t2
 prettylist li h (VBool False) = "L{" ++ (intercalate " " $ map prettyprint $ reverse $ h:li) ++ "}"
 prettylist li h t = "C{" ++ (intercalate " " $ map prettyprint $ reverse $ t:h:li) ++ "}"
 
+prettyprint :: Value -> String
 prettyprint v = 
     case v of
       VString a -> "\"" ++ a ++ "\""
       VChar a -> "Ch{" ++ [a] ++ "}"
       VInteger a -> show a
-      VWord a -> "/" ++ a
+      VWord a -> ":" ++ a
       VKeyword a -> ":" ++ a
       VBool False -> "f"
       VBool True -> "t"
@@ -31,12 +43,14 @@ prettyprint v =
 
 doprettyprint = popstack >>= (liftIO . putStrLn . prettyprint)
 
+checkedString :: Chi String
 checkedString = do
   v <- popstack
   case v of
     VString s -> return s
     _ -> chiError "Expecting String"
 
+checkedChar :: Chi Char
 checkedChar = do
   v <- popstack
   case v of
@@ -51,6 +65,10 @@ toString = do
                           VString a -> a
                           a -> prettyprint a
 
+
+-- numbers
+
+checkedInteger :: Chi Integer
 checkedInteger = do
   v <- popstack
   case v of
@@ -84,16 +102,17 @@ clearstack = modify $ \st -> st { stack = [] }
 
 -- lists
 
-listCons = do
-  h <- popstack
-  t <- popstack
-  pushstack $ VCons h t
-
+checkedCons :: Chi (Value, Value)
 checkedCons = do
   v <- popstack
   case v of
     VCons h t -> return (h, t)
     _ -> chiError $ "Expecting list, got " ++ (prettyprint v)
+
+listCons = do
+  h <- popstack
+  t <- popstack
+  pushstack $ VCons h t
 
 listHead = do
   (h, _) <- checkedCons
@@ -137,6 +156,7 @@ printvars = do
 
 -- tables
 
+checkedTable :: Chi (M.Map Value Value)
 checkedTable = do
   v <- popstack
   case v of
@@ -178,29 +198,35 @@ rand_gen = do
   pushstack $ VInteger n
 
 
-corelib = M.fromList
-          [ (".", doprettyprint)
-          , ("write", writestr)
-          , ("->string", toString)
-          , ("clear", clearstack)
+tablelib = M.fromList
+           [ ("<<",     inserttable)
+           , (">>",     gettable)
+           , ("keys",   tableKeys)
+           , ("values", tableValues)
+           , ("union",  tableUnion)
+           ]
 
-          , (".s", printstack)
-          , (".e", printenv)
-          , (".v", printvars)
-
-          , ("<<",     inserttable)
-          , (">>",     gettable)
-          , ("keys",   tableKeys)
-          , ("values", tableValues)
-          , ("union",  tableUnion)
-
-          , ("if", ifstmt)
-
-          , (";",      listCons)
+listlib = M.fromList
+          [ (";",      listCons)
           , ("head",   listHead)
           , ("tail",   listTail)
           , ("length", listLength)
           , ("nth",    listNth)
+          ]
+
+dochilib = M.fromList
+           [ ("print-stack",  printstack)
+           , ("print-env",    printenv)
+           , ("print-values", printvars)
+           ]
+
+corelib = M.fromList
+          [ ("pp", doprettyprint)
+          , ("write", writestr)
+          , ("->string", toString)
+          , ("clear", clearstack)
+
+          , ("if", ifstmt)
 
           , ("+", bin_math (+))
           , ("-", bin_math (-))
@@ -217,4 +243,11 @@ corelib = M.fromList
           , ("rand-range", rand_gen)
           ]
 
-coreState = injectLib "core" corelib
+
+-- |Inject core libraries into the interpreter state
+
+coreState :: ChiState -> ChiState
+coreState =   injectLib "core" corelib
+            . injectLib "dochi" dochilib
+            . injectLib "table" tablelib
+            . injectLib "list" listlib
