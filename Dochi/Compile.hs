@@ -129,8 +129,8 @@ compileAST ast =
       LTable value    -> do t <- literalTable value
                             tell [PushValue t]
 
-    where 
-          callword "drop" = tell [PopValue]
+
+    where callword "drop" = tell [PopValue]
           callword "f"    = tell [PushValue $ VBool False]
           callword "t"    = tell [PushValue $ VBool True]
           callword "call" = tell [FnCall]

@@ -20,9 +20,6 @@ import Random
 
 -- strings
 
-prettylist li h (VCons h2 t2) = prettylist (h:li) h2 t2
-prettylist li h (VBool False) = "L{" ++ (intercalate " " $ map prettyprint $ reverse $ h:li) ++ "}"
-prettylist li h t = "C{" ++ (intercalate " " $ map prettyprint $ reverse $ t:h:li) ++ "}"
 
 prettyprint :: Value -> String
 prettyprint v = 
@@ -37,9 +34,12 @@ prettyprint v =
       VQuot _ -> "[QUOT]"
       VClosure vals _ -> "[closure over " ++ (intercalate " " $ map prettyprint vals) ++ "]"
       VCons h t -> prettylist [] h t
-      VTable t -> "T{" ++ (intercalate " " $ map pptable $ M.toList t) ++ "}"
+      VTable t -> "T{" ++ (intercalate " " $ map prettytable $ M.toList t) ++ "}"
 
-    where pptable (k,v) = (prettyprint k) ++ " " ++ (prettyprint v)
+    where prettytable (k,v) = (prettyprint k) ++ " " ++ (prettyprint v)
+          prettylist li h (VCons h2 t2) = prettylist (h:li) h2 t2
+          prettylist li h (VBool False) = "L{" ++ (intercalate " " $ map prettyprint $ reverse $ h:li) ++ "}"
+          prettylist li h t = "C{" ++ (intercalate " " $ map prettyprint $ reverse $ t:h:li) ++ "}"
 
 doprettyprint = popstack >>= (liftIO . putStrLn . prettyprint)
 

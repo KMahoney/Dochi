@@ -63,19 +63,18 @@ exports st = M.foldWithKey (\name v m -> M.foldWithKey (\k _ m -> M.insert k nam
 -- |Compile and inject a syntax tree into the current state
 
 injectAST :: [ChiModuleAST] -> ChiState -> Either String ChiState
-injectAST prog st =
+injectAST prog st = foldrM modCompile st prog
 
-  let e = M.union (exports st) (allExports prog)
+  where e = M.union (exports st) (allExports prog)
 
-      modCompile :: ChiModuleAST -> ChiState -> Either String ChiState
-      modCompile m st = foldrM (defCompile m) st (modDefs m)
+        modCompile :: ChiModuleAST -> ChiState -> Either String ChiState
+        modCompile m st = foldrM (defCompile m) st (modDefs m)
 
-      defCompile :: ChiModuleAST -> (String, [AST]) -> ChiState -> Either String ChiState
-      defCompile m (name,ast) st = case (envCompile e ast) of
-                                           Left err -> throwError $ "Compile Error in " ++ (modName m) ++ "."  ++ name ++  ": " ++ err
-                                           Right ic -> return $ defWord (modName m) name ic st
+        defCompile :: ChiModuleAST -> (String, [AST]) -> ChiState -> Either String ChiState
+        defCompile m (name,ast) st = case (envCompile e ast) of
+                                       Left err -> throwError $ "Compile Error in " ++ (modName m) ++ "."  ++ name ++  ": " ++ err
+                                       Right ic -> return $ defWord (modName m) name ic st
 
-  in foldrM modCompile st prog
 
 
 -- |Inject a haskell module into the current state
@@ -89,7 +88,7 @@ injectLib name m st = st { env = M.union (env st) (M.fromList [(name, m)]) }
 chiError :: String -> Chi a
 chiError str = get >>= fail . (str++) . prettyTrace . wordTrace
 
-prettyTrace tr = "\n\n\ESC[31mSTACK TRACE\ESC[0m:\n" ++ (concatMap (++"\n") tr)
+    where prettyTrace tr = "\n\n\ESC[31mSTACK TRACE\ESC[0m:\n" ++ (concatMap (++"\n") tr)
 
 
 popstack :: Chi Value

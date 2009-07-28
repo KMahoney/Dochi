@@ -4,6 +4,8 @@ import System.IO
 import Control.Monad (liftM)
 import qualified System.IO.Error as IOE
 
+import Data.Either
+
 import Dochi.Parse (ChiModuleAST, dochiParseFile)
 import Dochi.Interpreter (ChiState, injectAST, runWord, emptyState)
 import Dochi.Core (coreState)
@@ -12,20 +14,14 @@ import Dochi.Core (coreState)
 initialState = coreState emptyState
 
 parseFile :: String -> IO [ChiModuleAST]
-parseFile name = do
-  content <- readFile name
-  case (dochiParseFile name content) of
-    Left err -> hPrint stderr err >> error "Parse Error"
-    Right p -> return p
+parseFile name = readFile name >>= either parseError return . dochiParseFile name
+    where parseError err = hPrint stderr err >> error "Parse Error"
 
 
 compileFiles :: ChiState -> [String] -> IO ChiState
 compileFiles st files = do 
   prog <- liftM concat $ mapM parseFile files
-  case (injectAST prog st) of
-    Left err -> error err
-    Right st' -> return st'
-
+  either error return (injectAST prog st)
 
 runFilesWithState :: ChiState -> [String] -> IO ()
 runFilesWithState st files = do
