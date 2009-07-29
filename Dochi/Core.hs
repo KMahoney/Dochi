@@ -136,24 +136,6 @@ listNth = let calc 0 (VCons x _) = return x
                 pushstack v
 
 
--- interpreter state
-
-printstack = do
-  s <- gets stack
-  let pp = concat $ intersperse " " $ reverse $ map prettyprint s
-  liftIO $ putStrLn $ "{" ++ pp ++ "}"
-
-printenv = do
-  s <- gets env
-  let pp = (concat . intersperse " " . M.keys) s
-  liftIO $ putStrLn $ "{" ++ pp ++ "}"
-
-printvars = do
-  s <- gets vars
-  let pp = concat $ intersperse " " $ reverse $ map prettyprint s
-  liftIO $ putStrLn $ "{" ++ pp ++ "}"
-
-
 -- tables
 
 checkedTable :: Chi (M.Map Value Value)
@@ -214,11 +196,7 @@ listlib = M.fromList
           , ("nth",    listNth)
           ]
 
-dochilib = M.fromList
-           [ ("print-stack",  printstack)
-           , ("print-env",    printenv)
-           , ("print-values", printvars)
-           ]
+dochilib = M.fromList []
 
 corelib = M.fromList
           [ ("pp", doprettyprint)

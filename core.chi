@@ -44,11 +44,9 @@ def 2each (l1 l2 q)
     hd1 hd2 q call
     tl1 tl2 and [tl1 tl2 q 2each] when
 
-def ->list (stack-count)
-    f [swap ;] stack-count do-times
+# TODO: each*
 
-def choose
-    dup length dec 0 swap rand-range nth
+def choose dup [dup length dec 0 swap rand-range nth] [f] if
 
 
 def remove-if (test) dup
@@ -74,6 +72,5 @@ def append (l1 l2) l1 reverse l2 [;] each reverse
 
 
 module table
-use list
 
-def table-each (tbl q) tbl keys tbl values q 2each
+def table-each (q) [keys] [values] bi q list.2each
