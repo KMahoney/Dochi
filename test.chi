@@ -8,6 +8,7 @@ def run-test call ["."] ["X"] if write
 
 
 module main
+use list table test
 
 def main
     L{

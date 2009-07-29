@@ -11,13 +11,14 @@ import qualified Data.Map as M
 
 import Dochi.Parse (AST, Interactive(..), dochiParseLine)
 import Dochi.Compile (envCompile)
-import Dochi.Interpreter (ChiState(..), defWord, runDochi, exports)
+import Dochi.Interpreter (ChiState(..), defWord, runDochi, environment)
 import Dochi.Core (prettyprint)
-
 
 
 data Options = Options { showIC :: Bool
                        , showAST :: Bool
+                       , current :: String
+                       , using :: [String]
                        }
 
 
@@ -38,21 +39,24 @@ debugIC opts ic = when (showIC opts) $ do putStrLn $ "IC: "
 runLine :: Options -> ChiState -> [AST] -> IO ChiState
 runLine opts st ast = do
 
-    case (envCompile (exports st) ast) of
+    case (envCompile (environment st) (current opts:using opts) ast) of
 
       Left err -> do putStrLn $ "Compile Error: " ++ err
                      return st
 
       Right ic -> do debugIC opts ic
                      st' <- runDochi st ic
-                     when (not . null $ stack st') $ putStrLn $ "\ESC[31m<<\ESC[0m " ++ (prettystack st')
+                     when (not . null $ stack st') $ putStrLn $ "\ESC[31mstack>\ESC[0m " ++ (prettystack st')
                      newline
                      return st'
 
 
-completion :: ChiState -> String -> IO [String]
-completion st str = return $ mapMaybe f $ M.keys (exports st)
+completion :: Options -> ChiState -> String -> IO [String]
+completion opts st str = return $ mapMaybe f $ filtered ++ all
     where f k = if (take (length str) k) == str then (Just k) else Nothing
+          filtered = concatMap snd $ filter (flip elem modules . fst) $ environment st
+          all = concatMap (\(m,w) -> map ((m ++ ".") ++) w) $ environment st
+          modules = ("core":current opts:using opts)
 
 
 runREPL :: Options -> ChiState -> IO ()
@@ -63,8 +67,8 @@ runREPL opts st = do setBasicWordBreakCharacters " "
 interactive :: Options -> ChiState -> IO ()
 interactive opts st = do
 
-  setCompletionEntryFunction (Just $ completion st)
-  line <- readline "\ESC[32m>>\ESC[0m "
+  setCompletionEntryFunction (Just $ completion opts st)
+  line <- readline $ (current opts) ++ "> "
 
   case line of
     Nothing -> putStrLn "Finished" >> return ()
@@ -86,14 +90,14 @@ interactive opts st = do
                  Right (IDef name ast) -> do
                         addHistory l
                         debugAST opts ast
-                        case (envCompile (exports st) ast) of
+                        case (envCompile (environment st) (current opts:using opts) ast) of
                           Left err -> putStrLn $ "Compile Error: " ++ err
                           Right ic -> do debugIC opts ic
-                                         interactive opts $ defWord "user" name ic st
+                                         interactive opts $ defWord (current opts) name ic st
 
                  Right (IMod name) -> do
                         addHistory l
-                        interactive opts st
+                        interactive opts { current = name } st
 
                  Left err -> do
                         addHistory l

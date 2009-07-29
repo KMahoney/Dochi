@@ -3,7 +3,7 @@ module Dochi.Parse ( AST(..)
                    , ChiModuleAST(..)
                    , dochiParseLine
                    , dochiParseFile
-                   , allExports
+                   , environment
                    ) where
 
 import Data.List (intersperse)
@@ -243,8 +243,7 @@ dochiParseFile :: String -> String -> Either ParseError [ChiModuleAST]
 dochiParseFile name content = runParser file () name content
 
 
+-- |Return an environment from a parsed module list
 
--- |Return all words in a list of modules mapped to their module name
-
-allExports :: [ChiModuleAST] -> M.Map String String
-allExports = M.fromList . concatMap (\m -> map (\d -> (fst d, modName m)) (modDefs m))
+environment :: [ChiModuleAST] -> [(String, [String])]
+environment l = [ (modName m, map fst $ modDefs m) | m <- l ]

@@ -1,7 +1,7 @@
 module Dochi.Interpreter ( ChiState(..)
                          , Chi
                          , emptyState
-                         , exports
+                         , environment
                          , injectAST
                          , injectLib
 
@@ -26,7 +26,8 @@ import Control.Monad.Error
 import Data.Foldable (foldrM)
 
 import Dochi.IMC
-import Dochi.Parse (AST, ChiModuleAST, modName, modDefs, allExports)
+import Dochi.Parse (AST, ChiModuleAST, modName, modDefs, modUses)
+import qualified Dochi.Parse as P
 import Dochi.Compile (envCompile)
 
 
@@ -54,10 +55,10 @@ emptyState :: ChiState
 emptyState = ChiState [] [] [] M.empty
 
 
--- |list of words mapped to their module name from the current state
+-- |environment of current interpreter state
 
-exports :: ChiState -> M.Map String String
-exports st = M.foldWithKey (\name v m -> M.foldWithKey (\k _ m -> M.insert k name m) m v) M.empty (env st)
+environment :: ChiState -> [(String,[String])]
+environment st = [ (k, M.keys v) | (k, v) <- M.assocs (env st) ]
 
 
 -- |Compile and inject a syntax tree into the current state
@@ -65,13 +66,13 @@ exports st = M.foldWithKey (\name v m -> M.foldWithKey (\k _ m -> M.insert k nam
 injectAST :: [ChiModuleAST] -> ChiState -> Either String ChiState
 injectAST prog st = foldrM modCompile st prog
 
-  where e = M.union (exports st) (allExports prog)
+  where e = (environment st) ++ (P.environment prog)
 
         modCompile :: ChiModuleAST -> ChiState -> Either String ChiState
         modCompile m st = foldrM (defCompile m) st (modDefs m)
 
         defCompile :: ChiModuleAST -> (String, [AST]) -> ChiState -> Either String ChiState
-        defCompile m (name,ast) st = case (envCompile e ast) of
+        defCompile m (name,ast) st = case (envCompile e (modName m:modUses m) ast) of
                                        Left err -> throwError $ "Compile Error in " ++ (modName m) ++ "."  ++ name ++  ": " ++ err
                                        Right ic -> return $ defWord (modName m) name ic st
 

@@ -48,7 +48,7 @@ main = do
   case opts of
 
     Options {repl = True} -> do st <- compileFiles initialState files
-                                R.runREPL R.Options { R.showIC = showIC opts, R.showAST = showAST opts } st
+                                R.runREPL R.Options { R.showIC = showIC opts, R.showAST = showAST opts, R.current = "user", R.using = [] } st
 
     _                     -> withFiles files runFiles
 

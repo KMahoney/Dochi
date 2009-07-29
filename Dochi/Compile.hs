@@ -12,8 +12,9 @@ import Control.Monad.Error
 import Dochi.IMC
 import Dochi.Parse (AST(..))
 
-data CompileState = CompileState { varState :: [String]
-                                 , mLookup :: M.Map String String
+data CompileState = CompileState { varList :: [String]
+                                 , envList :: [ (String, [String]) ]
+                                 , useList :: [String]
                                  }
 
 -- uses a Writer monad to output IC
@@ -21,7 +22,7 @@ data CompileState = CompileState { varState :: [String]
 type Compiler a = WriterT [IC] (StateT CompileState (Either String)) a
 
 
-newCompileState = CompileState [] M.empty
+newCompileState = CompileState [] [] []
 
 freevars :: [AST] -> S.Set String
 freevars [] = S.empty
@@ -36,14 +37,14 @@ freevars (h:t) =
 
 compileClosure :: [AST] -> Compiler ()
 compileClosure ast =
-    do CompileState st e <- get
-       if null (captured st)
-         then case compileScoped (CompileState [] e) ast of
+    do CompileState vars e u <- get
+       if null (captured vars)
+         then case compileScoped (CompileState [] e u) ast of
                 Left err -> throwError err
                 Right quot -> tell [PushValue $ VQuot quot]
-         else case compileScoped (CompileState (captured st) e) ast of
+         else case compileScoped (CompileState (captured vars) e u) ast of
                 Left err -> throwError err
-                Right quot -> tell [MakeClosure (indexes st) quot]
+                Right quot -> tell [MakeClosure (indexes vars) quot]
 
     where captured st = S.toList $ S.intersection (freevars ast) (S.fromList st)
           indexes st = reverse $ catMaybes $ map (flip elemIndex st) (captured st)
@@ -103,6 +104,28 @@ buildList ast = tell [PushValue $ VBool False] >> mapM_ f (reverse ast)
     where f ast = do compileAST ast
                      tell [CallWord "list" ";"]
 
+callword :: String -> Compiler ()
+
+callword "drop" = tell [PopValue]
+callword "f"    = tell [PushValue $ VBool False]
+callword "t"    = tell [PushValue $ VBool True]
+callword "call" = tell [FnCall]
+
+callword name   = do vars <- gets varList
+                     case (elemIndex name vars) of
+                       Just i -> tell [VarIndex (toInteger i)]
+                       Nothing -> findModule name
+
+
+findModule :: String -> Compiler ()
+findModule name = do CompileState _ e u <- get
+                     case f (u ++ defaultModules) e of
+                       [m] -> tell [CallWord m name]
+                       []  -> throwError $ "Unknown word " ++ name
+                       l   -> throwError $ "Conflict: word " ++ name ++ " in " ++ (show l)
+    where f u = map fst . filter (elem name . snd) . filter (flip elem u . fst)
+          defaultModules = ["core"]
+
 
 compileAST :: AST -> Compiler ()
 compileAST ast =
@@ -115,7 +138,7 @@ compileAST ast =
       LChar value     -> tell [PushValue $ VChar value]
       LKeyword value  -> tell [PushValue $ VKeyword value]
       Capture ids     -> do tell $ map VarPush (reverse ids)
-                            modify $ \(CompileState st e) -> (CompileState (ids ++ st) e)
+                            modify $ \(CompileState vars e u) -> CompileState (ids ++ vars) e u
       CodeBlock ast   -> compileClosure ast
       CallBlock value -> do compileAST value
                             tell [FnCall]
@@ -130,16 +153,6 @@ compileAST ast =
                             tell [PushValue t]
 
 
-    where callword "drop" = tell [PopValue]
-          callword "f"    = tell [PushValue $ VBool False]
-          callword "t"    = tell [PushValue $ VBool True]
-          callword "call" = tell [FnCall]
-          callword name = do CompileState st m <- get
-                             case (elemIndex name st) of
-                               Just i -> tell [VarIndex (toInteger i)]
-                               Nothing -> case M.lookup name m of
-                                            Just m' -> tell [CallWord m' name]
-                                            Nothing -> throwError $ "Unknown word " ++ name
 
 
 runCompiler st action = evalStateT (execWriterT $ action) st
@@ -152,7 +165,7 @@ compile st ast = runCompiler st $ mapM_ compileAST ast
 
 compileScoped :: CompileState -> [AST] -> Either String [IC]
 compileScoped st ast = runCompiler st $ do mapM_ compileAST ast
-                                           st' <- gets varState
+                                           st' <- gets varList
                                            let c = length st'
                                            when (c > 0) $ tell [EndScope $ toInteger c]
 
@@ -160,8 +173,9 @@ compileScoped st ast = runCompiler st $ do mapM_ compileAST ast
 
 -- |Compile with provided environment
 
-envCompile :: M.Map String String -- ^ Map of words to corresponding module name
-           -> [AST]               -- ^ Syntax tree to compile
-           -> Either String [IC]  -- ^ Returns intermediate code
+envCompile :: [(String, [String])] -- ^ environment
+           -> [String]             -- ^ list of useable modules
+           -> [AST]                -- ^ Syntax tree to compile
+           -> Either String [IC]   -- ^ Returns intermediate code
 
-envCompile e = compileScoped (CompileState [] e)
+envCompile e u = compileScoped (CompileState [] e u)
