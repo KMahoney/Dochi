@@ -6,7 +6,7 @@ import System.Console.GetOpt
 import qualified Data.Map as M
 
 import Dochi.Interpreter (env)
-import Dochi.Util (compileFiles, runFiles, initialState)
+import Dochi.Util (compileFiles, runFiles, initialState, handleError)
 import qualified Dochi.REPL as R
 
 
@@ -50,5 +50,5 @@ main = do
     Options {repl = True} -> do st <- compileFiles initialState files
                                 R.runREPL R.Options { R.showIC = showIC opts, R.showAST = showAST opts, R.current = "user", R.using = [] } st
 
-    _                     -> withFiles files runFiles
+    _                     -> handleError $ withFiles files runFiles
 

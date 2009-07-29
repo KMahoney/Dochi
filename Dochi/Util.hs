@@ -24,14 +24,13 @@ compileFiles st files = do
   either error return (injectAST prog st)
 
 runFilesWithState :: ChiState -> [String] -> IO ()
-runFilesWithState st files = do
-  st' <- compileFiles st files
-  r <- IOE.try $ runWord "main" "main" st'
-  case r of
-    Left err -> putStrLn $ if IOE.isUserError err
-                             then IOE.ioeGetErrorString err
-                             else show err
-    Right _ -> return ()
+runFilesWithState st files = compileFiles st files >>= runWord "main" "main" >> return ()
 
 runFiles :: [String] -> IO ()
 runFiles = runFilesWithState initialState
+
+handleError :: IO () -> IO ()
+handleError = flip catch showError
+    where showError err = hPutStrLn stderr $ if IOE.isUserError err
+                                               then IOE.ioeGetErrorString err
+                                               else show err
