@@ -15,7 +15,7 @@ library
         Dochi.Interpreter
         Dochi.Util
         Dochi.Core
-        Dochi.IMC
+        Dochi.IR
         Dochi.Parse
         Dochi.REPL
         Dochi.Compile

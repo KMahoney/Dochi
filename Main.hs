@@ -12,18 +12,18 @@ import qualified Dochi.REPL as R
 
 data Options = Options { repl :: Bool
                        , showAST :: Bool
-                       , showIC :: Bool
+                       , showIR :: Bool
                        }
 
 defaultOptions = Options { repl = False
                          , showAST = False
-                         , showIC = False
+                         , showIR = False
                          }
 
 options :: [OptDescr (Options -> Options)]
 options = [ Option ['i'] ["interactive"] (NoArg (\o -> o {repl=True})) "Interactive REPL"
           , Option [] ["ast"] (NoArg (\o -> o {showAST=True})) "Display Parse Output"
-          , Option [] ["debug"] (NoArg (\o -> o {showIC=True})) "Display Intermediate Code"
+          , Option [] ["debug"] (NoArg (\o -> o {showIR=True})) "Display Intermediate Code"
           ]
 
 getopts :: [String] -> IO (Options, [String])
@@ -48,7 +48,7 @@ main = do
   case opts of
 
     Options {repl = True} -> do st <- compileFiles initialState files
-                                R.runREPL R.Options { R.showIC = showIC opts, R.showAST = showAST opts, R.current = "user", R.using = [] } st
+                                R.runREPL R.Options { R.showIR = showIR opts, R.showAST = showAST opts, R.current = "user", R.using = [] } st
 
     _                     -> handleError $ withFiles files runFiles
 

@@ -9,7 +9,7 @@ import Control.Monad.Writer
 import Control.Monad.State
 import Control.Monad.Error
 
-import Dochi.IMC
+import Dochi.IR
 import Dochi.Parse (AST(..))
 
 data CompileState = CompileState { varList :: [String]
@@ -17,9 +17,9 @@ data CompileState = CompileState { varList :: [String]
                                  , useList :: [String]
                                  }
 
--- uses a Writer monad to output IC
+-- uses a Writer monad to output IR
 
-type Compiler a = WriterT [IC] (StateT CompileState (Either String)) a
+type Compiler a = WriterT [IR] (StateT CompileState (Either String)) a
 
 
 newCompileState = CompileState [] [] []
@@ -157,13 +157,13 @@ compileAST ast =
 
 runCompiler st action = evalStateT (execWriterT $ action) st
 
-compile :: CompileState -> [AST] -> Either String [IC]
+compile :: CompileState -> [AST] -> Either String [IR]
 compile st ast = runCompiler st $ mapM_ compileAST ast
 
 
 -- Compile the AST and pop the captured values from the value stack.
 
-compileScoped :: CompileState -> [AST] -> Either String [IC]
+compileScoped :: CompileState -> [AST] -> Either String [IR]
 compileScoped st ast = runCompiler st $ do mapM_ compileAST ast
                                            st' <- gets varList
                                            let c = length st'
@@ -176,6 +176,6 @@ compileScoped st ast = runCompiler st $ do mapM_ compileAST ast
 envCompile :: [(String, [String])] -- ^ environment
            -> [String]             -- ^ list of useable modules
            -> [AST]                -- ^ Syntax tree to compile
-           -> Either String [IC]   -- ^ Returns intermediate code
+           -> Either String [IR]   -- ^ Returns intermediate code
 
 envCompile e u = compileScoped (CompileState [] e u)

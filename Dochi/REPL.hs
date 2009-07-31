@@ -15,7 +15,7 @@ import Dochi.Interpreter (ChiState(..), defWord, runDochi, environment)
 import Dochi.Core (prettyprint)
 
 
-data Options = Options { showIC :: Bool
+data Options = Options { showIR :: Bool
                        , showAST :: Bool
                        , current :: String
                        , using :: [String]
@@ -31,7 +31,7 @@ debugAST opts ast = when (showAST opts) $ do putStrLn $ "AST: "
                                              mapM_ (putStrLn . ("    "++) . show) ast
 
 
-debugIC opts ic = when (showIC opts) $ do putStrLn $ "IC: "
+debugIR opts ic = when (showIR opts) $ do putStrLn $ "IR: "
                                           mapM_ (putStrLn . ("    "++) . show) ic
 
 
@@ -44,7 +44,7 @@ runLine opts st ast = do
       Left err -> do putStrLn $ "Compile Error: " ++ err
                      return st
 
-      Right ic -> do debugIC opts ic
+      Right ic -> do debugIR opts ic
                      st' <- runDochi st ic
                      when (not . null $ stack st') $ putStrLn $ "\ESC[31mstack>\ESC[0m " ++ (prettystack st')
                      newline
@@ -92,7 +92,7 @@ interactive opts st = do
                         debugAST opts ast
                         case (envCompile (environment st) (current opts:using opts) ast) of
                           Left err -> putStrLn $ "Compile Error: " ++ err
-                          Right ic -> do debugIC opts ic
+                          Right ic -> do debugIR opts ic
                                          interactive opts $ defWord (current opts) name ic st
 
                  Right (IMod name) -> do

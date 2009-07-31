@@ -25,7 +25,7 @@ import Control.Monad.State
 import Control.Monad.Error
 import Data.Foldable (foldrM)
 
-import Dochi.IMC
+import Dochi.IR
 import Dochi.Parse (AST, ChiModuleAST, modName, modDefs, modUses)
 import qualified Dochi.Parse as P
 import Dochi.Compile (envCompile)
@@ -138,7 +138,7 @@ callword m w = do
 
   where hidden = ["core", "list", "table"]
 
-makeclosure :: [Int] -> [IC] -> Chi ()
+makeclosure :: [Int] -> [IR] -> Chi ()
 makeclosure refs code = do
   v <- gets vars
   pushstack $ VClosure (map (v !!) refs) code
@@ -152,9 +152,9 @@ fncall = do
                              runCode code
     _ -> chiError $ "Cannot call value " ++ show a ++ "."
 
--- run IC code in Chi monad (IO with state)
+-- run IR code in Chi monad (IO with state)
 
-runCode :: [IC] -> Chi ()
+runCode :: [IR] -> Chi ()
 runCode [] = return ()
 
 runCode (instr:code) = do
@@ -176,7 +176,7 @@ runCode (instr:code) = do
 
 defWord :: String   -- ^ Module name
         -> String   -- ^ Word name
-        -> [IC]     -- ^ Intermediate code of new word
+        -> [IR]     -- ^ Intermediate code of new word
         -> ChiState -- ^ Initial state
         -> ChiState -- ^ New state
 
@@ -205,6 +205,6 @@ runWord m name st = case M.lookup m (env st) of
 
 -- |Run intermediate code in the provided state
 
-runDochi :: ChiState -> [IC] -> IO ChiState
+runDochi :: ChiState -> [IR] -> IO ChiState
 runDochi st code = do (a, s) <- runStateT (runCode code) st
                       return s

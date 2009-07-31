@@ -7,7 +7,7 @@ module Dochi.Core ( prettyprint
                   , coreState
                   ) where
 
-import Dochi.IMC
+import Dochi.IR
 import Dochi.Interpreter
 
 import Data.List (intercalate, intersperse)
