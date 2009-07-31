@@ -2,62 +2,60 @@ h1. Dochi
 
 h2. A Concatenative Programming Language
 
-Dochi is strongly influenced by Factor, Lua and Clojure. Its design goal is to be lightweight and embeddable, similar to Lua. Its base data structures will be immutable, like Clojure.
+Dochi is strongly influenced by Factor, Lua and Clojure.
+Its design goal is to be lightweight and embeddable, similar to Lua.
+Its default data structures are immutable, like Clojure.
+It has been designed to be a largely static language.
 
 h2. Syntax
 
 * Code is a list of words, like Forth/Factor
 * They operate on a stack
-* Lexical bindings can be introduced at any point:
+* Bindings can be introduced at any point:
 ** Results in 4: @1 (a) a 2 + a +@
 ** Results in 11: @2 3 4 (a b c) a a + b + c +@
 * Top level definitions use the 'def' keyword: @def square (a) a a *@
-* Keywords: @:hello@
-* Lists: @{1 2 3 4 "hello" "world"}@
-* Tables: @#{:a 1 :b 2 :c 3}@
+* All word definitions are inside a @module name@
+* Use @use module-name@ to import another module, or use @module-name.word@
 * Code quotations: @number? ["yes" write] ["no" write] if@
+* Lists: @{1 2 3 4}@ is syntax sugar for @f 4 ; 3 ; 2 ; 1 ;@ where @;@ is cons
+* Literal values:
+** Keywords: @:hello@
+** Strings: @"hello"@
+** Character: @Ch{h}@
+** List: @L{1 2 3 4}@
+** Table: @T{:a 1 :b 2 :key value}@
+** Cons: @C{1 2}@
 
 h2. Standard Library
 
-h3. Interpreter-only
+h3. core library
 
-* @object .@ Pretty print object.
-* @string write@ Print string.
-* @clear@ Clear stack.
-* @.s@ Print stack.
-* @.e@ Print current environment.
-* @.v@ Print current captured vars.
+|_. word|_. stack effect|_. description|
+|pp|(value -> )|pretty prints a value|
+|write|(string -> )|writes a string to output|
+|->string|(value -> string)|converts a value to a string|
+|if|(condition true-quot false-quot -> )|branch based on condition|
+|+ - * /|(num num -> num)|operate on two numbers|
+|< <= > >= =|(value value -> bool)|compare two values|
 
-h3. Tables
+h3. table library
 
-* @<table>@ Create an empty table.
-* @table value key <<@ Add (key, value) pair to table.
-* @table key >>@ Lookup key in table.
+|<<|(table value keyword -> )|associate keyword with value in table|
+|>>|(table keyword -> value)|return association of keyword in table|
+|keys|(table -> list)|table keys|
+|values|(table -> list)|table values|
+|union|(table table -> union)|union of two tables|
 
-h3. Lists
+h3. list library
 
-* @a b ;@ Cons a and b.
-* @list head@ Head of list.
-* @list tail@ Tail of list.
+|;|(value value -> cons)|cons two values|
+|head|(cons -> value)|head of cons|
+|tail|(cons -> value)|tail of cons|
+|length|(list -> number)|length of list|
+|nth|(list n -> value)|nth value of list|
 
-h3. Misc
-
-* @+ - * / < > <= >=@ Binary operations on two numbers.
-* @=@ General equality.
-* @bool true-block false-block if@ Execute true-block if bool is true, else false-block.
-
-h2. Internals
-
-* Core.hs - Standard library implementation.
-* IMC.hs - Immediate code data structures.
-* Compile.hs - Translation from AST to immediate code. Resolution of words.
-* Interpreter.hs - Haskell interpretation of immediate code. Uses @ChiState@ for state.
-* Parse.hs - Parsing to AST, list of modules. Returns @Interactive@ type, or @Prog@, which is a list of @ChiModuleAST@.
-
-* core.chi - More standard library written in Dochi.
-* test.chi - Basic tests.
-
-h3. Embedding in Haskell Code
+h2. Embedding in Haskell Code
 
 * @Parse.dochiParseFile@ Turns a string of code into a @[ChiModuleAST]@.
 * @Interpreter.emptyState@ an empty interpreter state.
@@ -65,5 +63,5 @@ h3. Embedding in Haskell Code
 * @Interpreter.injectLib@ injects a Haskell @ChiModule@ into the interpreter state.
 * @Interpreter.runWord@ runs a word in the given interpreter state.
 * @Interpreter.runDochi@ runs a string of code in the given interpreter state.
-* @Util.runFiles@ takes a list of filenames, parses and compiles them, and runs 'main'
+* @Util.runFiles@ takes a list of filenames, parses and compiles them, and runs 'main.main'
 * @Util.runFilesWithState@ does the same with an initial state.
