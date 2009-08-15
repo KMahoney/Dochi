@@ -34,9 +34,9 @@ module list
 def uncons [head] [tail] bi
 
 def each (l q)
-    l uncons (hd tl)
-    hd q call
-    tl [tl q each] when
+    l [ l uncons (hd tl)
+        hd q call
+        tl [tl q each] when ] [l] if
 
 def 2each (l1 l2 q)
     l1 uncons (hd1 tl1)
