@@ -124,7 +124,7 @@ findModule name = do CompileState _ e u <- get
                        []  -> throwError $ "Unknown word " ++ name
                        l   -> throwError $ "Conflict: word " ++ name ++ " in " ++ (show l)
     where f u = map fst . filter (elem name . snd) . filter (flip elem u . fst)
-          defaultModules = ["core"]
+          defaultModules = ["core", "list", "table"]
 
 
 compileAST :: AST -> Compiler ()

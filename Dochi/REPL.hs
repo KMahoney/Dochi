@@ -56,7 +56,7 @@ completion opts st str = return $ mapMaybe f $ filtered ++ all
     where f k = if (take (length str) k) == str then (Just k) else Nothing
           filtered = concatMap snd $ filter (flip elem modules . fst) $ environment st
           all = concatMap (\(m,w) -> map ((m ++ ".") ++) w) $ environment st
-          modules = ("core":current opts:using opts)
+          modules = ["core", "list", "table"] ++ (current opts:using opts)
 
 
 runREPL :: Options -> ChiState -> IO ()
