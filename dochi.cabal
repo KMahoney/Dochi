@@ -9,7 +9,7 @@ Build-Type: Simple
 Cabal-Version: >=1.2
 
 library
-  Build-Depends: base, haskell98, mtl, containers, parsec, editline
+  Build-Depends: base, mtl, containers, parsec, editline, random
   GHC-Options: -fglasgow-exts
   Exposed-Modules:
         Dochi.Interpreter

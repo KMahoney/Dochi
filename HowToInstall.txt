@@ -1,0 +1,16 @@
+Install Dochi to Linux Mint14 (64bit)
+
+1 run the below 2 commandes in terminal
+  sudo apt-get update
+  sudo apt-get install haskell-platform libghc-editline-dev
+
+2 clone this reposiory by git
+
+3 run the below command in this directory
+
+  cabal install
+
+4 add installed directory to path variable 
+ (by default ,dochi is installed in  $HOME/.dochi/bin)
+
+then you can run the command 'dochi'

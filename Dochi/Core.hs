@@ -14,7 +14,7 @@ import Data.List (intercalate, intersperse)
 import Data.Maybe (fromMaybe)
 import qualified Data.Map as M
 import Control.Monad.State
-import Random
+import System.Random
 
 
 
